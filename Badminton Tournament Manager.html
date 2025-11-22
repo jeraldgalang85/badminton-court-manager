@@ -1,0 +1,2188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badminton Tournament Manager</title>
+    <link rel="icon" type="image/png" href="North Smashers.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #344C3D 0%, #1a2620 100%);
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #0a0a0a 0%, #000000 100%);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .container {
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        /* Header */
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            position: relative;
+        }
+
+        .logo {
+            max-width: 150px;
+            width: 100%;
+            height: auto;
+        }
+
+        .header-text {
+            text-align: center;
+        }
+
+        .header-title {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #d4af37;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header-subtitle {
+            font-size: 1.1em;
+            color: #1a5632;
+            margin-top: 8px;
+        }
+
+        body.dark-mode .header-subtitle {
+            color: #d4af37;
+        }
+
+        .dark-mode-toggle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #1a5632;
+            color: #d4af37;
+            border: 2px solid #d4af37;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.5em;
+            transition: all 0.3s;
+        }
+
+        .dark-mode-toggle:hover {
+            background: #0d3d1f;
+            transform: scale(1.05);
+        }
+
+        /* Sections - Compact */
+        .section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+        }
+
+        body.dark-mode .section {
+            background: #2a2a2a;
+            border-color: #444;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            color: #1a5632;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #d4af37;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        body.dark-mode .section-title {
+            color: #d4af37;
+        }
+
+        /* Two Column Layout */
+        .two-col-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .two-col-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-size: 1em;
+        }
+
+        .btn-primary {
+            background: #1a5632;
+            color: #d4af37;
+            border: 2px solid #d4af37;
+        }
+
+        .btn-primary:hover {
+            background: #0d3d1f;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.9em;
+        }
+
+        /* Court Floor Plan - Compact */
+        .floor-plan-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            margin: 10px 0;
+            max-width: 200px;
+        }
+
+        .court-box {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e9ecef;
+            border: 2px solid #ddd;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #999;
+            padding: 3px;
+        }
+
+        .court-box:hover {
+            background: #dee2e6;
+        }
+
+        .court-box.selected {
+            background: #1a5632;
+            color: #d4af37;
+            border-color: #d4af37;
+        }
+
+        body.dark-mode .court-box {
+            background: #444;
+            border-color: #555;
+            color: #888;
+        }
+
+        body.dark-mode .court-box.selected {
+            background: #1a5632;
+            color: #d4af37;
+            border-color: #d4af37;
+        }
+
+        /* Compact Layout */
+        .setup-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .setup-row > div {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .compact-section {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+
+        body.dark-mode .compact-section {
+            background: #333;
+            border-color: #555;
+        }
+
+        .compact-title {
+            font-weight: bold;
+            color: #1a5632;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        body.dark-mode .compact-title {
+            color: #d4af37;
+        }
+
+        /* Tournament Info */
+        .tournament-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .info-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+
+        body.dark-mode .info-card {
+            background: #333;
+            border-color: #555;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        body.dark-mode .info-label {
+            color: #999;
+        }
+
+        .info-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #1a5632;
+        }
+
+        body.dark-mode .info-value {
+            color: #d4af37;
+        }
+
+        /* Players */
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+        }
+
+        .player-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        body.dark-mode .player-card {
+            background: #333;
+            border-color: #555;
+        }
+
+        .player-card.selected {
+            background: #d4f1d4;
+            border-color: #28a745;
+        }
+
+        .player-card input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+
+        .player-name {
+            flex: 1;
+        }
+
+        .player-stars {
+            display: flex;
+            gap: 2px;
+            cursor: pointer;
+        }
+
+        .star {
+            font-size: 1.1em;
+            opacity: 0.3;
+            transition: opacity 0.2s;
+        }
+
+        .star.active {
+            opacity: 1;
+            color: #ffc107;
+        }
+
+        /* Teams - Compact */
+        .teams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+        }
+
+        .team-card {
+            background: white;
+            border: 2px solid #1a5632;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        body.dark-mode .team-card {
+            background: #333;
+            border-color: #d4af37;
+        }
+
+        .team-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #1a5632;
+            margin-bottom: 8px;
+        }
+
+        body.dark-mode .team-name {
+            color: #d4af37;
+        }
+
+        .team-players {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .player-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        .player-badge.beginner {
+            background: #A8C5A3;
+            color: white;
+        }
+
+        .player-badge.intermediate {
+            background: #738A6E;
+            color: white;
+        }
+
+        .player-badge.advanced {
+            background: #344C3D;
+            color: white;
+        }
+
+        /* Match Cards */
+        .matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .match-card {
+            background: white;
+            border: 2px solid #1a5632;
+            border-radius: 10px;
+            padding: 15px;
+            position: relative;
+        }
+
+        body.dark-mode .match-card {
+            background: #333;
+            border-color: #d4af37;
+        }
+
+        .match-card.completed {
+            opacity: 0.7;
+            border-color: #6c757d;
+        }
+
+        .delete-match-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+
+        .match-card:hover .delete-match-btn {
+            opacity: 1;
+        }
+
+        .delete-match-btn:hover {
+            background: #c82333;
+            transform: scale(1.1);
+        }
+
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .match-number {
+            font-weight: bold;
+            color: #1a5632;
+            font-size: 1.1em;
+        }
+
+        body.dark-mode .match-number {
+            color: #d4af37;
+        }
+
+        .match-status {
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .match-status.scheduled {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .match-status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .court-assignment {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        body.dark-mode .court-assignment {
+            background: #1a1a1a;
+        }
+
+        .court-assignment label {
+            font-weight: bold;
+            color: #1a5632;
+        }
+
+        body.dark-mode .court-assignment label {
+            color: #d4af37;
+        }
+
+        .court-assignment select {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        body.dark-mode .court-assignment select {
+            background: #333;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        .court-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #1a5632;
+            color: #d4af37;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .team-row {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        body.dark-mode .team-row {
+            background: #2a2a2a;
+        }
+
+        .team-label {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        body.dark-mode .team-label {
+            color: #999;
+        }
+
+        .vs-divider {
+            text-align: center;
+            font-weight: bold;
+            color: #d4af37;
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+
+        /* Leaderboard */
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        body.dark-mode .leaderboard-table {
+            background: #2a2a2a;
+        }
+
+        .leaderboard-table th {
+            background: #1a5632;
+            color: #d4af37;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .leaderboard-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        body.dark-mode .leaderboard-table td {
+            border-bottom-color: #444;
+        }
+
+        .leaderboard-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        body.dark-mode .leaderboard-table tr:hover {
+            background: #333;
+        }
+
+        .rank-badge {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border-radius: 50%;
+            font-weight: bold;
+        }
+
+        .rank-badge.gold {
+            background: #ffd700;
+            color: #333;
+        }
+
+        .rank-badge.silver {
+            background: #c0c0c0;
+            color: #333;
+        }
+
+        .rank-badge.bronze {
+            background: #cd7f32;
+            color: white;
+        }
+
+        .rank-badge.default {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        body.dark-mode .rank-badge.default {
+            background: #444;
+            color: #e0e0e0;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        body.dark-mode .modal-content {
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+
+        .modal-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1a5632;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #d4af37;
+        }
+
+        body.dark-mode .modal-header {
+            color: #d4af37;
+        }
+
+        .score-input-group {
+            margin: 15px 0;
+        }
+
+        .score-input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .score-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-inputs input {
+            width: 80px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        body.dark-mode .score-inputs input {
+            background: #333;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            text-align: center;
+        }
+
+        body.dark-mode .stat-card {
+            background: #333;
+            border-color: #555;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #1a5632;
+        }
+
+        body.dark-mode .stat-value {
+            color: #d4af37;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        body.dark-mode .stat-label {
+            color: #999;
+        }
+
+        /* Form Elements */
+        input[type="text"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        body.dark-mode input[type="text"],
+        body.dark-mode input[type="date"],
+        body.dark-mode select {
+            background: #333;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        /* Toast - Professional */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+        }
+
+        .toast {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 18px 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            min-width: 320px;
+            animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55), fadeOut 0.3s ease 2.7s;
+            border-left: 5px solid;
+            backdrop-filter: blur(10px);
+        }
+
+        body.dark-mode .toast {
+            background: linear-gradient(135deg, #2a2a2a 0%, #1f1f1f 100%);
+            color: #e0e0e0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .toast-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            font-size: 1em;
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 0.9em;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        @keyframes slideInRight {
+            from { 
+                transform: translateX(120%); 
+                opacity: 0;
+            }
+            to { 
+                transform: translateX(0); 
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to { 
+                opacity: 0; 
+                transform: translateX(120%);
+            }
+        }
+
+        .toast.success { 
+            border-left-color: #28a745; 
+        }
+        .toast.success .toast-icon { 
+            background: #28a745; 
+            color: white;
+        }
+
+        .toast.error { 
+            border-left-color: #dc3545; 
+        }
+        .toast.error .toast-icon { 
+            background: #dc3545; 
+            color: white;
+        }
+
+        .toast.info { 
+            border-left-color: #17a2b8; 
+        }
+        .toast.info .toast-icon { 
+            background: #17a2b8; 
+            color: white;
+        }
+
+        .toast.warning { 
+            border-left-color: #ffc107; 
+        }
+        .toast.warning .toast-icon { 
+            background: #ffc107; 
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .header-container { flex-direction: column; }
+            .dark-mode-toggle { position: static; margin-top: 15px; }
+            .tournament-info { grid-template-columns: 1fr; }
+        }
+
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .container { box-shadow: none; }
+            .section:not(#leaderboard-section) { display: none; }
+            .dark-mode-toggle { display: none; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Score Entry Modal -->
+    <div class="modal" id="score-modal">
+        <div class="modal-content">
+            <div class="modal-header">Enter Match Scores</div>
+            <div id="score-modal-body"></div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-success" onclick="completeMatch()">Complete Match</button>
+                <button class="btn btn-secondary" onclick="closeScoreModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Team Modal -->
+    <div class="modal" id="team-modal">
+        <div class="modal-content">
+            <div class="modal-header">Create New Team</div>
+            <div class="form-group">
+                <label>Team Name</label>
+                <input type="text" id="new-team-name" placeholder="e.g., Thunder Smashers">
+            </div>
+            <div class="form-group">
+                <label>Select 2 Players</label>
+                <div id="player-selection-grid" class="players-grid"></div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveNewTeam()">Create Team</button>
+                <button class="btn btn-secondary" onclick="closeTeamModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Team Modal -->
+    <div class="modal" id="edit-team-modal">
+        <div class="modal-content">
+            <div class="modal-header">Edit Team</div>
+            <div class="form-group">
+                <label>Team Name</label>
+                <input type="text" id="edit-team-name" placeholder="e.g., Thunder Smashers">
+            </div>
+            <div class="form-group">
+                <label>Select 2 Players</label>
+                <div id="edit-player-selection-grid" class="players-grid"></div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveEditedTeam()">Save Changes</button>
+                <button class="btn btn-secondary" onclick="closeEditTeamModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header-container">
+            <img src="North Smashers.png" alt="North Smashers Logo" class="logo" onerror="this.onerror=null; this.src='North Smashers.jpg';">
+            <div class="header-text">
+                <div class="header-title">Tournament Manager</div>
+                <div class="header-subtitle">Doubles Competition & Team Rankings</div>
+            </div>
+            <button class="dark-mode-toggle" onclick="toggleDarkMode()" id="dark-mode-toggle">🌙</button>
+        </div>
+
+        <!-- Stats Dashboard -->
+        <div class="section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-matches">0</div>
+                    <div class="stat-label">Total Matches</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="completed-matches">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-games">0</div>
+                    <div class="stat-label">Total Games</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="active-teams">0</div>
+                    <div class="stat-label">Active Teams</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tournament Setup & Teams -->
+        <div class="two-col-layout">
+            <div class="section">
+                <div class="section-title">
+                    <span>Setup</span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn btn-sm btn-secondary" onclick="exportTournament()">📥</button>
+                        <button class="btn btn-sm btn-secondary" onclick="importTournament()">📤</button>
+                        <button class="btn btn-sm btn-danger" onclick="startNewTournament()">🆕</button>
+                    </div>
+                </div>
+                
+                <div class="setup-row">
+                    <div>
+                        <div style="margin-bottom: 8px;">
+                            <input type="text" id="tournament-name" placeholder="Tournament Name" value="North Smashers Doubles Tournament" style="margin-bottom: 8px;">
+                            <div style="display: flex; gap: 8px;">
+                                <select id="tournament-type" style="flex: 1;">
+                                    <option value="league">League</option>
+                                    <option value="tournament">Tournament</option>
+                                </select>
+                                <input type="date" id="tournament-date" style="flex: 1;">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.85em; margin-bottom: 5px; color: #666;">Courts:</div>
+                        <div class="floor-plan-grid">
+                            <div class="court-box" onclick="toggleCourtSelection(10)">10</div>
+                            <div class="court-box" onclick="toggleCourtSelection(11)">11</div>
+                            <div class="court-box" onclick="toggleCourtSelection(12)">12</div>
+                            <div class="court-box" onclick="toggleCourtSelection(7)">7</div>
+                            <div class="court-box" onclick="toggleCourtSelection(8)">8</div>
+                            <div class="court-box" onclick="toggleCourtSelection(9)">9</div>
+                            <div class="court-box" onclick="toggleCourtSelection(4)">4</div>
+                            <div class="court-box" onclick="toggleCourtSelection(5)">5</div>
+                            <div class="court-box" onclick="toggleCourtSelection(6)">6</div>
+                            <div class="court-box" onclick="toggleCourtSelection(1)">1</div>
+                            <div class="court-box" onclick="toggleCourtSelection(2)">2</div>
+                            <div class="court-box" onclick="toggleCourtSelection(3)">3</div>
+                        </div>
+                        <div style="font-size: 0.8em; color: #666; text-align: center;">
+                            <span id="selected-courts-count">0</span> selected
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-sm" style="width: 100%; margin-top: 10px;" onclick="saveTournamentInfo()">Save</button>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <span>Teams</span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn btn-sm btn-primary" onclick="openTeamModal()">➕</button>
+                        <button class="btn btn-sm btn-success" onclick="autoGenerateTeams()">🎲</button>
+                    </div>
+                </div>
+                <div class="teams-grid" id="teams-grid">
+                    <div style="grid-column: 1/-1; text-align: center; color: #999; padding: 15px; font-size: 0.9em;">
+                        No teams. Create or auto-generate.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Players & Add Guest -->
+        <div class="section">
+            <div class="section-title">
+                <span>Players</span>
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn btn-sm btn-primary" onclick="loadRegularPlayers()">Load Players</button>
+                    <input type="text" id="guest-name" placeholder="Guest name" style="width: 150px; padding: 5px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.9em;">
+                    <select id="guest-level" style="width: auto; padding: 5px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.9em;">
+                        <option value="1">⭐</option>
+                        <option value="2" selected>⭐⭐</option>
+                        <option value="3">⭐⭐⭐</option>
+                    </select>
+                    <button class="btn btn-sm btn-success" onclick="addGuestPlayer()">Add</button>
+                </div>
+            </div>
+            <div class="players-grid" id="players-grid" style="max-height: 150px; overflow-y: auto;"></div>
+        </div>
+
+        <!-- Match Management -->
+        <div class="section">
+            <div class="section-title">
+                <span>Match Management</span>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="generateAllMatches()">🏸 Generate All Team Matches</button>
+                <button class="btn btn-secondary" onclick="createManualMatch()">➕ Create Manual Match</button>
+            </div>
+
+            <div id="matches-container">
+                <div style="text-align: center; color: #999; padding: 40px;">
+                    No matches yet. Create teams first, then generate matches.
+                </div>
+            </div>
+        </div>
+
+        <!-- Playoffs Section -->
+        <div class="section" id="playoffs-section" style="display: none;">
+            <div class="section-title">
+                <span>🏆 Playoffs</span>
+                <button class="btn btn-sm btn-success" id="start-playoffs-btn" onclick="startPlayoffs()">Start Playoffs (Top 4)</button>
+            </div>
+            <div id="playoffs-container"></div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="section" id="leaderboard-section">
+            <div class="section-title">
+                <span>🏆 Team Rankings</span>
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn btn-sm btn-success" onclick="printCertificates()">🏅 Print Certificates</button>
+                    <button class="btn btn-sm btn-primary" onclick="window.print()">🖨️ Print Table</button>
+                </div>
+            </div>
+
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Team Name</th>
+                        <th>Players</th>
+                        <th>W</th>
+                        <th>L</th>
+                        <th>Games</th>
+                        <th>Pts</th>
+                        <th>Win%</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: #999; padding: 20px;">
+                            No rankings yet. Complete matches to see leaderboard.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <input type="file" id="import-file" accept=".json" style="display: none;" onchange="handleImportFile(event)">
+
+    <script>
+        // ===== DATA STRUCTURES =====
+        let tournament = {
+            name: 'North Smashers Doubles Tournament',
+            type: 'league',
+            date: '',
+            created: Date.now(),
+            lastUpdated: Date.now()
+        };
+
+        let players = [];
+        let teams = [];
+        let matches = [];
+        let rankings = [];
+        let selectedPlayers = [];
+        let playoffMatches = [];
+        let playoffStage = null; // 'semifinals' or 'finals'
+
+        const regularPlayersList = [
+            "Allan Dale Ho", "Allyza Magsino Ramos", "Amir Acosta", "Ian Evangelista",
+            "Chesca Chua-Vivas", "Dianne Miles Ho", "Dyan Galang", "Earl Angkiko",
+            "Edz Verduz", "Gemma Dulguime", "Gian Verduz", "Isabel Cabucana",
+            "Jay-ar Ramos", "Jerald Galang", "Lester Cabucana", "Luzsil Ledesma",
+            "Matt Chavez", "Michael Asterpix", "Michael Magpantay", "Mok Vivas",
+            "Pjay Lagura", "Vonnet Estaris", "Zoe Chow"
+        ];
+
+        const levelNames = ['', 'Beginner', 'Intermediate', 'Advanced'];
+        const levelClasses = ['', 'beginner', 'intermediate', 'advanced'];
+        let currentMatchForScoring = null;
+        let selectedCourts = [];
+
+        // ===== INIT =====
+        function init() {
+            loadDarkModePreference();
+            setTodayDate();
+            loadTournamentData();
+            renderPlayers();
+            renderTeams();
+            renderMatches();
+            updateLeaderboard();
+            updateStats();
+        }
+
+        function setTodayDate() {
+            document.getElementById('tournament-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        // ===== TOURNAMENT =====
+        function saveTournamentInfo() {
+            tournament.name = document.getElementById('tournament-name').value.trim();
+            tournament.type = document.getElementById('tournament-type').value;
+            tournament.date = document.getElementById('tournament-date').value;
+            tournament.lastUpdated = Date.now();
+
+            if (!tournament.name) {
+                showToast('Please enter a tournament name', 'warning');
+                return;
+            }
+
+            document.getElementById('display-name').textContent = tournament.name;
+            document.getElementById('display-type').textContent = tournament.type === 'league' ? 'League' : 'Tournament';
+            document.getElementById('display-date').textContent = tournament.date || '-';
+            document.getElementById('display-teams').textContent = teams.length;
+            document.getElementById('tournament-info').style.display = 'grid';
+
+            saveTournamentData();
+            showToast('Tournament info saved!', 'success');
+        }
+
+        function startNewTournament() {
+            if (!confirm('Are you sure? All current data will be cleared. This includes players, teams, matches, and rankings.')) return;
+
+            // Clear localStorage
+            localStorage.removeItem('badmintonTournament');
+            
+            // Reload the page to get a fresh start
+            location.reload();
+        }
+
+        // ===== PLAYERS =====
+        function loadRegularPlayers() {
+            const savedRatings = JSON.parse(localStorage.getItem('playerRatings') || '{}');
+            regularPlayersList.forEach(name => {
+                if (!players.find(p => p.name === name)) {
+                    players.push({ id: generateId(), name, level: savedRatings[name] || 2 });
+                }
+            });
+            renderPlayers();
+            saveTournamentData();
+            showToast('Regular players loaded!', 'success');
+        }
+
+        function addGuestPlayer() {
+            const name = document.getElementById('guest-name').value.trim();
+            const level = parseInt(document.getElementById('guest-level').value);
+            if (!name) { showToast('Please enter a player name', 'warning'); return; }
+            if (players.find(p => p.name.toLowerCase() === name.toLowerCase())) { showToast('Player already exists!', 'error'); return; }
+            players.push({ id: generateId(), name, level });
+            document.getElementById('guest-name').value = '';
+            renderPlayers();
+            saveTournamentData();
+            showToast(`${name} added!`, 'success');
+        }
+
+        function updatePlayerLevel(playerId, newLevel) {
+            const player = players.find(p => p.id === playerId);
+            if (player) {
+                player.level = newLevel;
+                const ratings = {};
+                players.forEach(p => ratings[p.name] = p.level);
+                localStorage.setItem('playerRatings', JSON.stringify(ratings));
+                saveTournamentData();
+                renderPlayers(); // Re-render to show changes immediately
+            }
+        }
+
+        function renderPlayers() {
+            const container = document.getElementById('players-grid');
+            if (players.length === 0) {
+                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">No players yet. Load regular players or add guests.</div>';
+                return;
+            }
+            container.innerHTML = '';
+            players.forEach(player => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                const stars = Array(3).fill(0).map((_, i) => `<span class="star ${i < player.level ? 'active' : ''}" onclick="event.stopPropagation(); updatePlayerLevel('${player.id}', ${i + 1})">⭐</span>`).join('');
+                card.innerHTML = `<span class="player-name">${player.name}</span><div class="player-stars" onclick="event.stopPropagation()">${stars}</div>`;
+                container.appendChild(card);
+            });
+        }
+
+        // ===== TEAMS =====
+        function openTeamModal() {
+            if (players.length < 2) { showToast('Add at least 2 players first!', 'warning'); return; }
+            selectedPlayers = [];
+            const grid = document.getElementById('player-selection-grid');
+            grid.innerHTML = '';
+            players.forEach(player => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                card.onclick = () => togglePlayerSelection(player.id, card);
+                const stars = '⭐'.repeat(player.level);
+                card.innerHTML = `<input type="checkbox"><span class="player-name">${player.name} ${stars}</span>`;
+                grid.appendChild(card);
+            });
+            document.getElementById('team-modal').classList.add('show');
+        }
+
+        function closeTeamModal() {
+            document.getElementById('team-modal').classList.remove('show');
+            selectedPlayers = [];
+        }
+
+        function togglePlayerSelection(playerId, cardElement) {
+            const idx = selectedPlayers.indexOf(playerId);
+            if (idx !== -1) {
+                selectedPlayers.splice(idx, 1);
+                cardElement.classList.remove('selected');
+                cardElement.querySelector('input').checked = false;
+            } else {
+                if (selectedPlayers.length >= 2) {
+                    showToast('You can only select 2 players per team', 'warning');
+                    return;
+                }
+                selectedPlayers.push(playerId);
+                cardElement.classList.add('selected');
+                cardElement.querySelector('input').checked = true;
+            }
+        }
+
+        function saveNewTeam() {
+            const teamName = document.getElementById('new-team-name').value.trim();
+            if (!teamName) { showToast('Please enter a team name', 'warning'); return; }
+            if (selectedPlayers.length !== 2) { showToast('Please select exactly 2 players', 'warning'); return; }
+            
+            teams.push({ id: generateId(), name: teamName, player1Id: selectedPlayers[0], player2Id: selectedPlayers[1] });
+            document.getElementById('new-team-name').value = '';
+            closeTeamModal();
+            renderTeams();
+            saveTournamentData();
+            document.getElementById('display-teams').textContent = teams.length;
+            showToast(`Team "${teamName}" created!`, 'success');
+        }
+
+        function autoGenerateTeams() {
+            if (players.length < 2) { showToast('Need at least 2 players', 'warning'); return; }
+            const shuffled = [...players].sort(() => Math.random() - 0.5);
+            let count = 0;
+            for (let i = 0; i < shuffled.length - 1; i += 2) {
+                teams.push({ id: generateId(), name: `Team ${teams.length + 1}`, player1Id: shuffled[i].id, player2Id: shuffled[i + 1].id });
+                count++;
+            }
+            renderTeams();
+            saveTournamentData();
+            document.getElementById('display-teams').textContent = teams.length;
+            showToast(`${count} teams auto-generated!`, 'success');
+        }
+
+        function deleteTeam(teamId) {
+            teams = teams.filter(t => t.id !== teamId);
+            renderTeams();
+            saveTournamentData();
+            document.getElementById('display-teams').textContent = teams.length;
+        }
+
+        let currentEditingTeamId = null;
+
+        function openEditTeamModal(teamId) {
+            currentEditingTeamId = teamId;
+            const team = teams.find(t => t.id === teamId);
+            if (!team) return;
+
+            document.getElementById('edit-team-name').value = team.name;
+            selectedPlayers = [team.player1Id, team.player2Id];
+
+            const grid = document.getElementById('edit-player-selection-grid');
+            grid.innerHTML = '';
+            players.forEach(player => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                const isSelected = selectedPlayers.includes(player.id);
+                if (isSelected) card.classList.add('selected');
+                card.onclick = () => toggleEditPlayerSelection(player.id, card);
+                const stars = '⭐'.repeat(player.level);
+                card.innerHTML = `<input type="checkbox" ${isSelected ? 'checked' : ''}><span class="player-name">${player.name} ${stars}</span>`;
+                grid.appendChild(card);
+            });
+
+            document.getElementById('edit-team-modal').classList.add('show');
+        }
+
+        function closeEditTeamModal() {
+            document.getElementById('edit-team-modal').classList.remove('show');
+            currentEditingTeamId = null;
+            selectedPlayers = [];
+        }
+
+        function toggleEditPlayerSelection(playerId, cardElement) {
+            const idx = selectedPlayers.indexOf(playerId);
+            if (idx !== -1) {
+                selectedPlayers.splice(idx, 1);
+                cardElement.classList.remove('selected');
+                cardElement.querySelector('input').checked = false;
+            } else {
+                if (selectedPlayers.length >= 2) {
+                    showToast('You can only select 2 players per team', 'warning');
+                    return;
+                }
+                selectedPlayers.push(playerId);
+                cardElement.classList.add('selected');
+                cardElement.querySelector('input').checked = true;
+            }
+        }
+
+        function saveEditedTeam() {
+            const teamName = document.getElementById('edit-team-name').value.trim();
+            if (!teamName) { showToast('Please enter a team name', 'warning'); return; }
+            if (selectedPlayers.length !== 2) { showToast('Please select exactly 2 players', 'warning'); return; }
+
+            const team = teams.find(t => t.id === currentEditingTeamId);
+            if (team) {
+                team.name = teamName;
+                team.player1Id = selectedPlayers[0];
+                team.player2Id = selectedPlayers[1];
+            }
+
+            closeEditTeamModal();
+            renderTeams();
+            renderMatches(); // Update matches to show new team names
+            saveTournamentData();
+            showToast('Team updated!', 'success');
+        }
+
+        function renderTeams() {
+            const container = document.getElementById('teams-grid');
+            if (teams.length === 0) {
+                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">No teams yet. Create teams manually or auto-generate.</div>';
+                return;
+            }
+            container.innerHTML = '';
+            teams.forEach(team => {
+                const p1 = players.find(p => p.id === team.player1Id);
+                const p2 = players.find(p => p.id === team.player2Id);
+                if (!p1 || !p2) return;
+                const card = document.createElement('div');
+                card.className = 'team-card';
+                card.innerHTML = `
+                    <div class="team-name">${team.name}</div>
+                    <div class="team-players">
+                        <span class="player-badge ${levelClasses[p1.level]}">${p1.name}</span>
+                        <span class="player-badge ${levelClasses[p2.level]}">${p2.name}</span>
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="openEditTeamModal('${team.id}')">Edit</button>
+                        <button class="btn btn-danger btn-sm" style="flex: 1;" onclick="deleteTeam('${team.id}')">Delete</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // ===== MATCHES =====
+        function generateAllMatches() {
+            if (teams.length < 2) { showToast('Need at least 2 teams', 'warning'); return; }
+            const newMatches = [];
+            let courtNum = 1;
+            for (let i = 0; i < teams.length - 1; i++) {
+                for (let j = i + 1; j < teams.length; j++) {
+                    newMatches.push({ 
+                        id: generateId(), 
+                        team1Id: teams[i].id, 
+                        team2Id: teams[j].id, 
+                        status: 'scheduled', 
+                        games: [], 
+                        winnerId: null, 
+                        completedAt: null, 
+                        courtNumber: courtNum 
+                    });
+                    courtNum++;
+                    if (courtNum > 12) courtNum = 1; // Cycle back to court 1 after 12
+                }
+            }
+            matches.push(...newMatches);
+            renderMatches();
+            saveTournamentData();
+            showToast(`${newMatches.length} matches generated with auto court assignment!`, 'success');
+        }
+
+        function createManualMatch() {
+            if (teams.length < 2) { showToast('Need at least 2 teams', 'warning'); return; }
+            matches.push({ id: generateId(), team1Id: teams[0].id, team2Id: teams[1].id, status: 'scheduled', games: [], winnerId: null, completedAt: null, courtNumber: null });
+            renderMatches();
+            saveTournamentData();
+        }
+
+        function assignMatchToCourt(matchId, courtNumber) {
+            const match = matches.find(m => m.id === matchId);
+            if (!match) return;
+            match.courtNumber = courtNumber === '' ? null : parseInt(courtNumber);
+            saveTournamentData();
+            renderMatches();
+            showToast(courtNumber ? `Assigned to Court ${courtNumber}` : 'Court removed', 'info');
+        }
+
+        function renderMatches() {
+            const container = document.getElementById('matches-container');
+            if (matches.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">No matches yet. Create teams first, then generate matches.</div>';
+                return;
+            }
+            const grid = document.createElement('div');
+            grid.className = 'matches-grid';
+            matches.forEach((match, index) => {
+                const team1 = teams.find(t => t.id === match.team1Id);
+                const team2 = teams.find(t => t.id === match.team2Id);
+                if (!team1 || !team2) return;
+                const p1 = players.find(p => p.id === team1.player1Id);
+                const p2 = players.find(p => p.id === team1.player2Id);
+                const p3 = players.find(p => p.id === team2.player1Id);
+                const p4 = players.find(p => p.id === team2.player2Id);
+                const card = document.createElement('div');
+                card.className = `match-card ${match.status}`;
+                const statusText = match.status === 'scheduled' ? 'Scheduled' : 'Completed';
+                let courtHTML = match.status !== 'completed' ? 
+                    `<div class="court-assignment"><label>Court:</label><select onchange="assignMatchToCourt('${match.id}', this.value)"><option value="">Not Assigned</option>${Array.from({length: 12}, (_, i) => `<option value="${i + 1}" ${match.courtNumber === i + 1 ? 'selected' : ''}>Court ${i + 1}</option>`).join('')}</select></div>` :
+                    (match.courtNumber ? `<div style="text-align: center; margin: 10px 0;"><span class="court-badge">Court ${match.courtNumber}</span></div>` : '');
+                let scoresHTML = '';
+                if (match.status === 'completed' && match.games.length > 0) {
+                    scoresHTML = '<div style="margin: 10px 0; font-size: 0.9em;">';
+                    match.games.forEach((game, idx) => { scoresHTML += `<div>Game ${idx + 1}: <strong>${game.team1Score}-${game.team2Score}</strong></div>`; });
+                    scoresHTML += '</div>';
+                }
+                card.innerHTML = `
+                    <button class="delete-match-btn" onclick="deleteMatch('${match.id}')">✕</button>
+                    <div class="match-header"><span class="match-number">Match #${index + 1}</span><span class="match-status ${match.status}">${statusText}</span></div>
+                    ${courtHTML}
+                    <div class="team-row"><div class="team-label">${team1.name}</div><div>${p1.name} & ${p2.name}</div></div>
+                    <div class="vs-divider">VS</div>
+                    <div class="team-row"><div class="team-label">${team2.name}</div><div>${p3.name} & ${p4.name}</div></div>
+                    ${scoresHTML}
+                    ${match.status !== 'completed' ? `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="openScoreModal('${match.id}')">Enter Scores</button>` : ''}
+                `;
+                grid.appendChild(card);
+            });
+            container.innerHTML = '';
+            container.appendChild(grid);
+        }
+
+        function deleteMatch(matchId) {
+            if (!confirm('Delete this match?')) return;
+            matches = matches.filter(m => m.id !== matchId);
+            renderMatches();
+            calculateRankings();
+            updateLeaderboard();
+            updateStats();
+            saveTournamentData();
+        }
+
+        // ===== SCORES =====
+        function openScoreModal(matchId) {
+            currentMatchForScoring = matchId;
+            const match = matches.find(m => m.id === matchId);
+            const team1 = teams.find(t => t.id === match.team1Id);
+            const team2 = teams.find(t => t.id === match.team2Id);
+            // Regular matches: single game, Playoffs: best of 3
+            const gameInputs = `<div class="score-input-group"><label>Game 1</label><div class="score-inputs"><input type="number" id="t1-game1" min="0" max="30" placeholder="0"><span>-</span><input type="number" id="t2-game1" min="0" max="30" placeholder="0"></div></div>`;
+            document.getElementById('score-modal-body').innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;"><strong>${team1.name}</strong> vs <strong>${team2.name}</strong></div>
+                ${gameInputs}
+            `;
+            document.getElementById('score-modal').classList.add('show');
+        }
+
+        function closeScoreModal() {
+            document.getElementById('score-modal').classList.remove('show');
+            currentMatchForScoring = null;
+        }
+
+        function completeMatch() {
+            // Check if this is a playoff match
+            const playoffMatch = playoffMatches.find(m => m.id === currentMatchForScoring);
+            if (playoffMatch) { completePlayoffMatch(); return; }
+            
+            const match = matches.find(m => m.id === currentMatchForScoring);
+            if (!match) return;
+            
+            // Regular matches: Single game format
+            const t1Score = parseInt(document.getElementById('t1-game1').value) || 0;
+            const t2Score = parseInt(document.getElementById('t2-game1').value) || 0;
+            
+            if (t1Score === 0 && t2Score === 0) { 
+                showToast('Please enter scores for the game', 'warning'); 
+                return; 
+            }
+            if (t1Score < 21 && t2Score < 21) { 
+                showToast('At least one team must reach 21 points', 'error'); 
+                return; 
+            }
+            if (Math.abs(t1Score - t2Score) < 2 && (t1Score >= 20 || t2Score >= 20)) { 
+                showToast('Must win by 2 points', 'error'); 
+                return; 
+            }
+            
+            // Store the single game result
+            match.games = [{ gameNum: 1, team1Score: t1Score, team2Score: t2Score }];
+            match.status = 'completed';
+            match.winnerId = t1Score > t2Score ? match.team1Id : match.team2Id;
+            match.completedAt = Date.now();
+            
+            closeScoreModal();
+            renderMatches();
+            calculateRankings();
+            updateLeaderboard();
+            updateStats();
+            saveTournamentData();
+            showToast('Match completed!', 'success');
+        }
+
+        // ===== RANKINGS =====
+        function calculateRankings() {
+            const teamStats = {};
+            teams.forEach(team => {
+                teamStats[team.id] = { teamId: team.id, name: team.name, matchesPlayed: 0, matchesWon: 0, matchesLost: 0, gamesWon: 0, gamesLost: 0, pointsFor: 0, pointsAgainst: 0, totalPoints: 0, winPercentage: 0, rank: 0 };
+            });
+            matches.filter(m => m.status === 'completed').forEach(match => {
+                const t1Stats = teamStats[match.team1Id];
+                const t2Stats = teamStats[match.team2Id];
+                if (!t1Stats || !t2Stats) return;
+                t1Stats.matchesPlayed++;
+                t2Stats.matchesPlayed++;
+                let t1GamesWon = 0, t2GamesWon = 0, t1Points = 0, t2Points = 0;
+                match.games.forEach(game => {
+                    if (game.team1Score > game.team2Score) t1GamesWon++; else t2GamesWon++;
+                    t1Points += game.team1Score;
+                    t2Points += game.team2Score;
+                });
+                t1Stats.gamesWon += t1GamesWon;
+                t1Stats.gamesLost += t2GamesWon;
+                t2Stats.gamesWon += t2GamesWon;
+                t2Stats.gamesLost += t1GamesWon;
+                t1Stats.pointsFor += t1Points;
+                t1Stats.pointsAgainst += t2Points;
+                t2Stats.pointsFor += t2Points;
+                t2Stats.pointsAgainst += t1Points;
+                if (match.winnerId === match.team1Id) { t1Stats.matchesWon++; t2Stats.matchesLost++; } else { t2Stats.matchesWon++; t1Stats.matchesLost++; }
+            });
+            Object.values(teamStats).forEach(stat => {
+                stat.totalPoints = (stat.matchesWon * 3) + stat.gamesWon;
+                stat.winPercentage = stat.matchesPlayed > 0 ? (stat.matchesWon / stat.matchesPlayed * 100).toFixed(1) : 0;
+            });
+            const sorted = Object.values(teamStats).sort((a, b) => {
+                if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                if ((b.pointsFor - b.pointsAgainst) !== (a.pointsFor - a.pointsAgainst)) return (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst);
+                return b.winPercentage - a.winPercentage;
+            });
+            sorted.forEach((stat, index) => { stat.rank = index + 1; });
+            rankings = sorted;
+        }
+
+        function updateLeaderboard() {
+            calculateRankings();
+            const tbody = document.getElementById('leaderboard-body');
+            if (rankings.length === 0 || rankings.every(r => r.matchesPlayed === 0)) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999; padding: 40px;">No rankings yet. Complete matches to see team leaderboard.</td></tr>';
+                document.getElementById('playoffs-section').style.display = 'none';
+                return;
+            }
+            
+            // Show playoffs button if 4+ teams with matches
+            const teamsWithMatches = rankings.filter(r => r.matchesPlayed > 0);
+            if (teamsWithMatches.length >= 4 && playoffMatches.length === 0) {
+                document.getElementById('playoffs-section').style.display = 'block';
+                document.getElementById('start-playoffs-btn').style.display = 'inline-block';
+            }
+            
+            tbody.innerHTML = '';
+            rankings.forEach(stat => {
+                if (stat.matchesPlayed === 0) return;
+                const team = teams.find(t => t.id === stat.teamId);
+                const p1 = players.find(p => p.id === team.player1Id);
+                const p2 = players.find(p => p.id === team.player2Id);
+                const badgeClass = stat.rank === 1 ? 'gold' : stat.rank === 2 ? 'silver' : stat.rank === 3 ? 'bronze' : 'default';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="rank-badge ${badgeClass}">${stat.rank}</span></td>
+                    <td><strong>${stat.name}</strong></td>
+                    <td>${p1.name} & ${p2.name}</td>
+                    <td>${stat.matchesWon}</td>
+                    <td>${stat.matchesLost}</td>
+                    <td>${stat.gamesWon}-${stat.gamesLost}</td>
+                    <td><strong>${stat.totalPoints}</strong></td>
+                    <td>${stat.winPercentage}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateStats() {
+            const completedMatches = matches.filter(m => m.status === 'completed');
+            const totalGames = completedMatches.reduce((sum, m) => sum + m.games.length, 0);
+            document.getElementById('total-matches').textContent = matches.length;
+            document.getElementById('completed-matches').textContent = completedMatches.length;
+            document.getElementById('total-games').textContent = totalGames;
+            document.getElementById('active-teams').textContent = teams.length;
+        }
+
+        // ===== STORAGE =====
+        function saveTournamentData() {
+            localStorage.setItem('badmintonTournament', JSON.stringify({ tournament, players, teams, matches, rankings, savedAt: Date.now() }));
+        }
+
+        function loadTournamentData() {
+            const saved = localStorage.getItem('badmintonTournament');
+            if (!saved) return;
+            try {
+                const data = JSON.parse(saved);
+                tournament = data.tournament || tournament;
+                players = data.players || [];
+                teams = data.teams || [];
+                matches = data.matches || [];
+                rankings = data.rankings || [];
+                document.getElementById('tournament-name').value = tournament.name;
+                document.getElementById('tournament-type').value = tournament.type;
+                document.getElementById('tournament-date').value = tournament.date;
+                if (tournament.name) {
+                    document.getElementById('display-name').textContent = tournament.name;
+                    document.getElementById('display-type').textContent = tournament.type === 'league' ? 'League' : 'Tournament';
+                    document.getElementById('display-date').textContent = tournament.date || '-';
+                    document.getElementById('display-teams').textContent = teams.length;
+                    document.getElementById('tournament-info').style.display = 'grid';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function exportTournament() {
+            const data = { tournament, players, teams, matches, rankings, exportedAt: Date.now() };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${tournament.name.replace(/\s+/g, '_')}_${tournament.date}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Tournament exported!', 'success');
+        }
+
+        function importTournament() {
+            document.getElementById('import-file').click();
+        }
+
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.tournament || !data.players || !data.teams || !data.matches) { showToast('Invalid file', 'error'); return; }
+                    tournament = data.tournament;
+                    players = data.players;
+                    teams = data.teams;
+                    matches = data.matches;
+                    rankings = data.rankings || [];
+                    document.getElementById('tournament-name').value = tournament.name;
+                    document.getElementById('tournament-type').value = tournament.type;
+                    document.getElementById('tournament-date').value = tournament.date;
+                    document.getElementById('display-name').textContent = tournament.name;
+                    document.getElementById('display-type').textContent = tournament.type === 'league' ? 'League' : 'Tournament';
+                    document.getElementById('display-date').textContent = tournament.date || '-';
+                    document.getElementById('display-teams').textContent = teams.length;
+                    document.getElementById('tournament-info').style.display = 'grid';
+                    renderPlayers();
+                    renderTeams();
+                    renderMatches();
+                    updateLeaderboard();
+                    updateStats();
+                    saveTournamentData();
+                    showToast('Tournament imported!', 'success');
+                } catch (error) { showToast('Failed to import', 'error'); }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ===== UTILS =====
+        function generateId() {
+            return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = { 
+                success: '✓', 
+                error: '✗', 
+                warning: '⚠', 
+                info: 'ℹ' 
+            };
+            
+            const titles = {
+                success: 'Success',
+                error: 'Error',
+                warning: 'Warning',
+                info: 'Information'
+            };
+            
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type]}</div>
+                <div class="toast-content">
+                    <div class="toast-title">${titles[type]}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            document.getElementById('dark-mode-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+        }
+
+        function loadDarkModePreference() {
+            if (localStorage.getItem('darkMode') === 'enabled') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('dark-mode-toggle').textContent = '☀️';
+            }
+        }
+
+        // ===== COURT SELECTION =====
+        function toggleCourtSelection(courtNum) {
+            const idx = selectedCourts.indexOf(courtNum);
+            if (idx !== -1) {
+                selectedCourts.splice(idx, 1);
+            } else {
+                selectedCourts.push(courtNum);
+            }
+            selectedCourts.sort((a, b) => a - b);
+            updateCourtSelection();
+        }
+
+        function updateCourtSelection() {
+            document.querySelectorAll('.court-box').forEach(box => {
+                const courtNum = parseInt(box.textContent);
+                if (selectedCourts.includes(courtNum)) {
+                    box.classList.add('selected');
+                } else {
+                    box.classList.remove('selected');
+                }
+            });
+            document.getElementById('selected-courts-count').textContent = selectedCourts.length;
+        }
+
+        // ===== CERTIFICATES =====
+        function printCertificate(rankIndex) {
+            calculateRankings();
+            const topThree = rankings.filter(r => r.matchesPlayed > 0).slice(0, 3);
+            
+            if (rankIndex >= topThree.length) {
+                showToast('No team at this rank!', 'warning');
+                return;
+            }
+
+            const stat = topThree[rankIndex];
+            const team = teams.find(t => t.id === stat.teamId);
+            const p1 = players.find(p => p.id === team.player1Id);
+            const p2 = players.find(p => p.id === team.player2Id);
+
+            const rankLabels = ['Champion', '2nd Place', '3rd Place'];
+            const rankClasses = ['first', 'second', 'third'];
+            const medals = ['🥇', '🥈', '🥉'];
+
+            const printWindow = window.open('', '', 'width=1100,height=850');
+            printWindow.document.write('<html><head><title>Certificate - ' + stat.name + '</title>');
+            printWindow.document.write('<style>');
+            printWindow.document.write(`
+                @page { size: A4 landscape; margin: 0; }
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                html, body { 
+                    width: 297mm;
+                    height: 210mm;
+                    margin: 0;
+                    padding: 0;
+                    overflow: hidden;
+                }
+                body { 
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .certificate {
+                    width: 297mm;
+                    height: 210mm;
+                    padding: 20mm 25mm 25mm 25mm;
+                    background: white;
+                    border: 8mm double #d4af37;
+                    box-sizing: border-box;
+                    position: relative;
+                }
+                .certificate::before {
+                    content: '';
+                    position: absolute;
+                    top: 12mm;
+                    left: 12mm;
+                    right: 12mm;
+                    bottom: 12mm;
+                    border: 1mm solid #1a5632;
+                    border-radius: 3mm;
+                }
+                .certificate::after {
+                    content: '';
+                    position: absolute;
+                    top: 14mm;
+                    left: 14mm;
+                    right: 14mm;
+                    bottom: 14mm;
+                    border: 0.3mm solid #d4af37;
+                    border-radius: 2mm;
+                }
+                .cert-content {
+                    text-align: center;
+                    position: relative;
+                    z-index: 1;
+                    padding: 0mm 20mm 4mm 20mm;
+                }
+                .cert-logo { 
+                    max-width: 38mm;
+                    max-height: 38mm;
+                    margin: 0 auto 1mm;
+                }
+                .cert-title { 
+                    font-size: 1.9em; 
+                    color: #d4af37; 
+                    font-weight: bold; 
+                    letter-spacing: 2mm;
+                    margin: 1.5mm 0;
+                }
+                .cert-subtitle { 
+                    font-size: 0.8em; 
+                    color: #1a5632; 
+                    text-transform: uppercase;
+                    letter-spacing: 0.8mm;
+                    margin: 1.5mm 0;
+                }
+                .cert-rank { 
+                    font-size: 2.6em; 
+                    font-weight: bold; 
+                    margin: 3mm 0;
+                }
+                .cert-rank.first { color: #ffd700; }
+                .cert-rank.second { color: #c0c0c0; }
+                .cert-rank.third { color: #cd7f32; }
+                .cert-presented { 
+                    font-size: 0.75em; 
+                    color: #666; 
+                    font-style: italic;
+                    margin: 1.5mm 0;
+                }
+                .cert-team { 
+                    font-size: 1.8em; 
+                    font-weight: bold; 
+                    color: #1a5632; 
+                    margin: 2.5mm 0;
+                }
+                .cert-players { 
+                    font-size: 1.05em; 
+                    color: #666; 
+                    margin: 1.5mm 0;
+                }
+                .cert-tournament { 
+                    font-size: 0.9em; 
+                    color: #1a5632; 
+                    font-weight: 600;
+                    padding: 1.5mm 4mm;
+                    border-top: 0.5mm solid #d4af37;
+                    border-bottom: 0.5mm solid #d4af37;
+                    display: inline-block;
+                    margin: 2.5mm 0;
+                }
+                .cert-stats { 
+                    font-size: 0.75em; 
+                    color: #666; 
+                    line-height: 1.3;
+                    margin: 1.5mm 0;
+                }
+                .cert-stats strong {
+                    color: #1a5632;
+                }
+                .cert-message { 
+                    font-size: 0.7em; 
+                    color: #1a5632; 
+                    font-style: italic;
+                    margin: 1.5mm 0;
+                }
+                .cert-date { 
+                    font-size: 0.7em; 
+                    color: #999; 
+                    padding-top: 1.5mm;
+                    border-top: 0.2mm solid #ddd;
+                    margin: 1.5mm 0 0 0;
+                }
+            `);
+            printWindow.document.write('</style></head><body>');
+            
+            printWindow.document.write(`
+                <div class="certificate">
+                    <div class="cert-content">
+                        <img src="North Smashers.png" alt="North Smashers Logo" class="cert-logo" onerror="this.onerror=null; this.src='North Smashers.jpg';">
+                        <div class="cert-title">CERTIFICATE OF ACHIEVEMENT</div>
+                        <div class="cert-subtitle">Badminton Doubles Tournament</div>
+                        <div class="cert-rank ${rankClasses[rankIndex]}">${medals[rankIndex]} ${rankLabels[rankIndex]}</div>
+                        <div class="cert-presented">This certificate is proudly presented to</div>
+                        <div class="cert-team">${stat.name}</div>
+                        <div class="cert-players">${p1.name} & ${p2.name}</div>
+                        <div class="cert-tournament">${tournament.name}</div>
+                        <div class="cert-stats">
+                            <strong>${stat.matchesWon} Wins</strong> • ${stat.matchesLost} Losses<br>
+                            Games Won: ${stat.gamesWon}-${stat.gamesLost} • Total Points: ${stat.totalPoints} • Win Rate: ${stat.winPercentage}%
+                        </div>
+                        <div class="cert-message">Celebrating dedication, teamwork, and competitive spirit</div>
+                        <div class="cert-date">${new Date(tournament.date || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                    </div>
+                </div>
+            `);
+
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            
+            setTimeout(() => {
+                printWindow.print();
+            }, 250);
+        }
+
+        function printCertificates() {
+            calculateRankings();
+            const topThree = rankings.filter(r => r.matchesPlayed > 0).slice(0, 3);
+            
+            if (topThree.length === 0) {
+                showToast('No teams with matches completed yet!', 'warning');
+                return;
+            }
+
+            // Print each certificate individually
+            topThree.forEach((stat, index) => {
+                setTimeout(() => {
+                    printCertificate(index);
+                }, index * 500); // Stagger by 500ms to allow each window to open
+            });
+
+            showToast(`Printing ${topThree.length} certificates...`, 'info');
+        }
+
+        // ===== PLAYOFFS =====
+        function startPlayoffs() {
+            calculateRankings();
+            const topFour = rankings.filter(r => r.matchesPlayed > 0).slice(0, 4);
+            
+            if (topFour.length < 4) {
+                showToast('Need at least 4 teams with matches completed!', 'warning');
+                return;
+            }
+
+            playoffMatches = [
+                { id: 'semi1', label: 'Semi-Final 1', team1Id: topFour[0].teamId, team2Id: topFour[3].teamId, winnerId: null, status: 'scheduled', games: [] },
+                { id: 'semi2', label: 'Semi-Final 2', team1Id: topFour[1].teamId, team2Id: topFour[2].teamId, winnerId: null, status: 'scheduled', games: [] },
+                { id: 'final', label: 'Finals', team1Id: null, team2Id: null, winnerId: null, status: 'pending', games: [] }
+            ];
+            
+            playoffStage = 'semifinals';
+            renderPlayoffs();
+            document.getElementById('playoffs-section').style.display = 'block';
+            document.getElementById('start-playoffs-btn').style.display = 'none';
+            showToast('Playoffs started! Top 4 teams seeded.', 'success');
+        }
+
+        function renderPlayoffs() {
+            const container = document.getElementById('playoffs-container');
+            container.innerHTML = '<h4 style="color: #1a5632; margin: 15px 0;">Semi-Finals</h4>';
+            
+            playoffMatches.slice(0, 2).forEach(match => {
+                const t1 = teams.find(t => t.id === match.team1Id);
+                const t2 = teams.find(t => t.id === match.team2Id);
+                if (!t1 || !t2) return;
+                
+                const p1 = players.find(p => p.id === t1.player1Id);
+                const p2 = players.find(p => p.id === t1.player2Id);
+                const p3 = players.find(p => p.id === t2.player1Id);
+                const p4 = players.find(p => p.id === t2.player2Id);
+                
+                let scoresHTML = match.winnerId ? `<div style="margin: 10px 0; font-size: 0.9em;">${match.games.map((g, i) => `Game ${i+1}: ${g.team1Score}-${g.team2Score}`).join('<br>')}</div>` : '';
+                const winnerTeam = match.winnerId ? teams.find(t => t.id === match.winnerId) : null;
+                
+                container.innerHTML += `
+                    <div class="match-card ${match.status}" style="margin-bottom: 15px;">
+                        <div class="match-header"><span class="match-number">${match.label}</span><span class="match-status ${match.status}">${match.winnerId ? 'Completed' : 'Scheduled'}</span></div>
+                        <div class="team-row"><div class="team-label">${t1.name}</div><div>${p1.name} & ${p2.name}</div></div>
+                        <div class="vs-divider">VS</div>
+                        <div class="team-row"><div class="team-label">${t2.name}</div><div>${p3.name} & ${p4.name}</div></div>
+                        ${scoresHTML}
+                        ${winnerTeam ? `<div style="text-align: center; margin: 10px 0; font-weight: bold; color: #28a745;">Winner: ${winnerTeam.name}</div>` : 
+                        `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="enterPlayoffScore('${match.id}')">Enter Scores</button>`}
+                    </div>
+                `;
+            });
+
+            const finals = playoffMatches[2];
+            
+            if (finals && finals.team1Id && finals.team2Id) {
+                container.innerHTML += '<h4 style="color: #1a5632; margin: 15px 0;">Finals</h4>';
+                const t1 = teams.find(t => t.id === finals.team1Id);
+                const t2 = teams.find(t => t.id === finals.team2Id);
+                const p1 = players.find(p => p.id === t1.player1Id);
+                const p2 = players.find(p => p.id === t1.player2Id);
+                const p3 = players.find(p => p.id === t2.player1Id);
+                const p4 = players.find(p => p.id === t2.player2Id);
+                container.innerHTML += `<div class="match-card" style="border: 3px solid #ffd700;"><div class="match-header"><span>🏆 FINALS</span></div><div class="team-row">${t1.name}: ${p1.name} & ${p2.name}</div><div class="vs-divider">VS</div><div class="team-row">${t2.name}: ${p3.name} & ${p4.name}</div>${finals.winnerId ? '' : `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="enterPlayoffScore('final')">Enter Scores</button>`}</div>`;
+            }
+        }
+
+        function enterPlayoffScore(matchId) {
+            const match = playoffMatches.find(m => m.id === matchId);
+            const team1 = teams.find(t => t.id === match.team1Id);
+            const team2 = teams.find(t => t.id === match.team2Id);
+            currentMatchForScoring = matchId;
+            document.getElementById('score-modal-body').innerHTML = `<div style="text-align: center; margin-bottom: 20px;"><strong>${match.label}: ${team1.name} vs ${team2.name}</strong></div>${[1, 2, 3].map(n => `<div class="score-input-group"><label>Game ${n}</label><div class="score-inputs"><input type="number" id="t1-game${n}" min="0" max="30" placeholder="0"><span>-</span><input type="number" id="t2-game${n}" min="0" max="30" placeholder="0"></div></div>`).join('')}`;
+            document.getElementById('score-modal').classList.add('show');
+        }
+
+        function completePlayoffMatch() {
+            const match = playoffMatches.find(m => m.id === currentMatchForScoring);
+            if (!match) { completeMatch(); return; }
+            const games = [];
+            let t1GamesWon = 0, t2GamesWon = 0;
+            for (let i = 1; i <= 3; i++) {
+                const t1Score = parseInt(document.getElementById(`t1-game${i}`).value) || 0;
+                const t2Score = parseInt(document.getElementById(`t2-game${i}`).value) || 0;
+                if (t1Score === 0 && t2Score === 0) continue;
+                if (t1Score < 21 && t2Score < 21) { showToast(`Game ${i}: Must reach 21`, 'error'); return; }
+                games.push({ team1Score: t1Score, team2Score: t2Score });
+                if (t1Score > t2Score) t1GamesWon++; else t2GamesWon++;
+            }
+            if (games.length === 0) { showToast('Enter scores', 'warning'); return; }
+            match.games = games;
+            match.status = 'completed';
+            match.winnerId = t1GamesWon > t2GamesWon ? match.team1Id : match.team2Id;
+            
+            if (match.id === 'semi1' || match.id === 'semi2') {
+                const semi1 = playoffMatches[0];
+                const semi2 = playoffMatches[1];
+                if (semi1.winnerId && semi2.winnerId) {
+                    playoffMatches[2].team1Id = semi1.winnerId;
+                    playoffMatches[2].team2Id = semi2.winnerId;
+                    playoffMatches[2].status = 'scheduled';
+                }
+            }
+            
+            closeScoreModal();
+            renderPlayoffs();
+            showToast('Match completed!', 'success');
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
