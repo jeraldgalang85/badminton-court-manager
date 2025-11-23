@@ -1479,8 +1479,12 @@
         // ===== MATCHES =====
         function generateAllMatches() {
             if (teams.length < 2) { showToast('Need at least 2 teams', 'warning'); return; }
+            
+            // Use selected courts if any, otherwise use all courts 1-12
+            const courtsToUse = selectedCourts.length > 0 ? selectedCourts : Array.from({length: 12}, (_, i) => i + 1);
+            
             const newMatches = [];
-            let courtNum = 1;
+            let courtIndex = 0;
             for (let i = 0; i < teams.length - 1; i++) {
                 for (let j = i + 1; j < teams.length; j++) {
                     newMatches.push({ 
@@ -1491,16 +1495,17 @@
                         games: [], 
                         winnerId: null, 
                         completedAt: null, 
-                        courtNumber: courtNum 
+                        courtNumber: courtsToUse[courtIndex]
                     });
-                    courtNum++;
-                    if (courtNum > 12) courtNum = 1; // Cycle back to court 1 after 12
+                    courtIndex++;
+                    if (courtIndex >= courtsToUse.length) courtIndex = 0; // Cycle through selected courts
                 }
             }
             matches.push(...newMatches);
             renderMatches();
             saveTournamentData();
-            showToast(`${newMatches.length} matches generated with auto court assignment!`, 'success');
+            const courtMsg = selectedCourts.length > 0 ? `using courts: ${courtsToUse.join(', ')}` : 'with auto court assignment';
+            showToast(`${newMatches.length} matches generated ${courtMsg}!`, 'success');
         }
 
         function createManualMatch() {
@@ -1525,6 +1530,10 @@
                 container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">No matches yet. Create teams first, then generate matches.</div>';
                 return;
             }
+            
+            // Use selected courts for dropdown, or all courts if none selected
+            const courtsForDropdown = selectedCourts.length > 0 ? selectedCourts : Array.from({length: 12}, (_, i) => i + 1);
+            
             const grid = document.createElement('div');
             grid.className = 'matches-grid';
             matches.forEach((match, index) => {
@@ -1538,8 +1547,14 @@
                 const card = document.createElement('div');
                 card.className = `match-card ${match.status}`;
                 const statusText = match.status === 'scheduled' ? 'Scheduled' : 'Completed';
+                
+                // Generate court options based on selected courts
+                const courtOptions = courtsForDropdown.map(court => 
+                    `<option value="${court}" ${match.courtNumber === court ? 'selected' : ''}>Court ${court}</option>`
+                ).join('');
+                
                 let courtHTML = match.status !== 'completed' ? 
-                    `<div class="court-assignment"><label>Court:</label><select onchange="assignMatchToCourt('${match.id}', this.value)"><option value="">Not Assigned</option>${Array.from({length: 12}, (_, i) => `<option value="${i + 1}" ${match.courtNumber === i + 1 ? 'selected' : ''}>Court ${i + 1}</option>`).join('')}</select></div>` :
+                    `<div class="court-assignment"><label>Court:</label><select onchange="assignMatchToCourt('${match.id}', this.value)"><option value="">Not Assigned</option>${courtOptions}</select></div>` :
                     (match.courtNumber ? `<div style="text-align: center; margin: 10px 0;"><span class="court-badge">Court ${match.courtNumber}</span></div>` : '');
                 let scoresHTML = '';
                 if (match.status === 'completed' && match.games.length > 0) {
