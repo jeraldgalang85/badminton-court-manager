@@ -1116,8 +1116,36 @@
                 <span>Match Management</span>
             </div>
 
+            <!-- Tournament Format Selection -->
+            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #1a5632;" class="compact-section">
+                <div style="margin-bottom: 10px;">
+                    <label style="font-weight: bold; color: #1a5632; margin-bottom: 5px; display: block;">Tournament Format:</label>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <input type="radio" name="tournament-format" value="single" checked onchange="toggleBracketSettings()">
+                            <span>Single Bracket (All teams play each other)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <input type="radio" name="tournament-format" value="multiple" onchange="toggleBracketSettings()">
+                            <span>Multiple Brackets</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Bracket Settings (shown only when Multiple Brackets is selected) -->
+                <div id="bracket-settings" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
+                        <label style="font-weight: bold; color: #1a5632;">Number of Brackets:</label>
+                        <input type="number" id="num-brackets" min="2" max="10" value="2" style="width: 80px; padding: 8px; border: 2px solid #ddd; border-radius: 5px;" onchange="updateBracketAssignment()">
+                        <button class="btn btn-sm btn-success" onclick="autoDistributeToBrackets()">Auto-Distribute Teams</button>
+                        <button class="btn btn-sm btn-secondary" onclick="autoDistributeBySkill()">Distribute by Skill</button>
+                    </div>
+                    <div id="bracket-assignment-container"></div>
+                </div>
+            </div>
+
             <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                <button class="btn btn-primary" onclick="generateAllMatches()">🏸 Generate All Team Matches</button>
+                <button class="btn btn-primary" onclick="generateMatches()">🏸 Generate Matches</button>
                 <button class="btn btn-secondary" onclick="createManualMatch()">➕ Create Manual Match</button>
             </div>
 
@@ -1179,6 +1207,8 @@
             name: 'North Smashers Doubles Tournament',
             type: 'league',
             date: '',
+            format: 'single', // 'single' or 'multiple'
+            numberOfBrackets: 2,
             created: Date.now(),
             lastUpdated: Date.now()
         };
@@ -1190,6 +1220,7 @@
         let selectedPlayers = [];
         let playoffMatches = [];
         let playoffStage = null; // 'semifinals' or 'finals'
+        let currentBracket = null; // For filtering leaderboard view
 
         const regularPlayersList = [
             "Allan Dale Ho", "Allyza Magsino Ramos", "Amir Acosta", "Ian Evangelista",
@@ -1350,7 +1381,7 @@
             if (!teamName) { showToast('Please enter a team name', 'warning'); return; }
             if (selectedPlayers.length !== 2) { showToast('Please select exactly 2 players', 'warning'); return; }
             
-            teams.push({ id: generateId(), name: teamName, player1Id: selectedPlayers[0], player2Id: selectedPlayers[1] });
+            teams.push({ id: generateId(), name: teamName, player1Id: selectedPlayers[0], player2Id: selectedPlayers[1], bracketId: null });
             document.getElementById('new-team-name').value = '';
             closeTeamModal();
             renderTeams();
@@ -1364,7 +1395,7 @@
             const shuffled = [...players].sort(() => Math.random() - 0.5);
             let count = 0;
             for (let i = 0; i < shuffled.length - 1; i += 2) {
-                teams.push({ id: generateId(), name: `Team ${teams.length + 1}`, player1Id: shuffled[i].id, player2Id: shuffled[i + 1].id });
+                teams.push({ id: generateId(), name: `Team ${teams.length + 1}`, player1Id: shuffled[i].id, player2Id: shuffled[i + 1].id, bracketId: null });
                 count++;
             }
             renderTeams();
@@ -1476,6 +1507,190 @@
             });
         }
 
+        // ===== BRACKET FUNCTIONS =====
+        function toggleBracketSettings() {
+            const format = document.querySelector('input[name="tournament-format"]:checked').value;
+            tournament.format = format;
+            const bracketSettings = document.getElementById('bracket-settings');
+            
+            if (format === 'multiple') {
+                bracketSettings.style.display = 'block';
+                updateBracketAssignment();
+            } else {
+                bracketSettings.style.display = 'none';
+                // Clear bracket assignments when switching to single
+                teams.forEach(team => team.bracketId = null);
+            }
+            saveTournamentData();
+        }
+
+        function updateBracketAssignment() {
+            const numBrackets = parseInt(document.getElementById('num-brackets').value) || 2;
+            tournament.numberOfBrackets = numBrackets;
+            
+            const container = document.getElementById('bracket-assignment-container');
+            container.innerHTML = '';
+            
+            if (teams.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Create teams first to assign them to brackets.</div>';
+                return;
+            }
+            
+            // Create bracket containers
+            for (let i = 1; i <= numBrackets; i++) {
+                const bracketDiv = document.createElement('div');
+                bracketDiv.style.cssText = 'margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; border: 2px solid #1a5632;';
+                
+                const teamsInBracket = teams.filter(t => t.bracketId === i);
+                const teamsList = teamsInBracket.length > 0 
+                    ? teamsInBracket.map(t => `<span style="display: inline-block; padding: 3px 8px; margin: 2px; background: white; border-radius: 3px; font-size: 0.85em;">${t.name}</span>`).join('')
+                    : '<span style="color: #999; font-style: italic;">No teams assigned</span>';
+                
+                bracketDiv.innerHTML = `
+                    <div style="font-weight: bold; color: #1a5632; margin-bottom: 8px;">Bracket ${i} (${teamsInBracket.length} teams):</div>
+                    <div style="min-height: 30px;">${teamsList}</div>
+                `;
+                container.appendChild(bracketDiv);
+            }
+            
+            // Add unassigned teams section
+            const unassignedTeams = teams.filter(t => !t.bracketId);
+            if (unassignedTeams.length > 0) {
+                const unassignedDiv = document.createElement('div');
+                unassignedDiv.style.cssText = 'margin: 10px 0; padding: 10px; background: #fff3cd; border-radius: 5px; border: 2px solid #ffc107;';
+                unassignedDiv.innerHTML = `
+                    <div style="font-weight: bold; color: #856404; margin-bottom: 8px;">⚠️ Unassigned Teams (${unassignedTeams.length}):</div>
+                    <div>${unassignedTeams.map(t => `<span style="display: inline-block; padding: 3px 8px; margin: 2px; background: white; border-radius: 3px; font-size: 0.85em;">${t.name}</span>`).join('')}</div>
+                `;
+                container.appendChild(unassignedDiv);
+            }
+        }
+
+        function autoDistributeToBrackets() {
+            const numBrackets = parseInt(document.getElementById('num-brackets').value) || 2;
+            if (teams.length === 0) {
+                showToast('No teams to distribute', 'warning');
+                return;
+            }
+            
+            // Shuffle teams randomly
+            const shuffled = [...teams].sort(() => Math.random() - 0.5);
+            
+            // Distribute evenly
+            shuffled.forEach((team, index) => {
+                team.bracketId = (index % numBrackets) + 1;
+            });
+            
+            updateBracketAssignment();
+            saveTournamentData();
+            showToast(`Teams distributed across ${numBrackets} brackets!`, 'success');
+        }
+
+        function autoDistributeBySkill() {
+            const numBrackets = parseInt(document.getElementById('num-brackets').value) || 2;
+            if (teams.length === 0) {
+                showToast('No teams to distribute', 'warning');
+                return;
+            }
+            
+            // Calculate team skill level (average of both players)
+            const teamsWithSkill = teams.map(team => {
+                const p1 = players.find(p => p.id === team.player1Id);
+                const p2 = players.find(p => p.id === team.player2Id);
+                const avgSkill = ((p1?.level || 2) + (p2?.level || 2)) / 2;
+                return { team, avgSkill };
+            });
+            
+            // Sort by skill (highest to lowest)
+            teamsWithSkill.sort((a, b) => b.avgSkill - a.avgSkill);
+            
+            // Distribute using snake draft (1,2,3,3,2,1,1,2,3...)
+            let currentBracket = 1;
+            let direction = 1;
+            
+            teamsWithSkill.forEach(({ team }) => {
+                team.bracketId = currentBracket;
+                
+                if (direction === 1) {
+                    currentBracket++;
+                    if (currentBracket > numBrackets) {
+                        currentBracket = numBrackets;
+                        direction = -1;
+                    }
+                } else {
+                    currentBracket--;
+                    if (currentBracket < 1) {
+                        currentBracket = 1;
+                        direction = 1;
+                    }
+                }
+            });
+            
+            updateBracketAssignment();
+            saveTournamentData();
+            showToast(`Teams distributed by skill across ${numBrackets} brackets!`, 'success');
+        }
+
+        function generateMatches() {
+            const format = tournament.format;
+            
+            if (format === 'single') {
+                generateAllMatches();
+            } else {
+                generateBracketMatches();
+            }
+        }
+
+        function generateBracketMatches() {
+            if (teams.length < 2) { 
+                showToast('Need at least 2 teams', 'warning'); 
+                return; 
+            }
+            
+            // Check if all teams are assigned to brackets
+            const unassignedTeams = teams.filter(t => !t.bracketId);
+            if (unassignedTeams.length > 0) {
+                showToast(`${unassignedTeams.length} teams not assigned to brackets! Assign them first.`, 'warning');
+                return;
+            }
+            
+            const courtsToUse = selectedCourts.length > 0 ? selectedCourts : Array.from({length: 12}, (_, i) => i + 1);
+            const newMatches = [];
+            let courtIndex = 0;
+            
+            // Generate matches within each bracket
+            const numBrackets = tournament.numberOfBrackets;
+            for (let bracketId = 1; bracketId <= numBrackets; bracketId++) {
+                const bracketTeams = teams.filter(t => t.bracketId === bracketId);
+                
+                if (bracketTeams.length < 2) continue;
+                
+                // Round-robin within bracket
+                for (let i = 0; i < bracketTeams.length - 1; i++) {
+                    for (let j = i + 1; j < bracketTeams.length; j++) {
+                        newMatches.push({ 
+                            id: generateId(), 
+                            team1Id: bracketTeams[i].id, 
+                            team2Id: bracketTeams[j].id, 
+                            status: 'scheduled', 
+                            games: [], 
+                            winnerId: null, 
+                            completedAt: null, 
+                            courtNumber: courtsToUse[courtIndex],
+                            bracketId: bracketId
+                        });
+                        courtIndex++;
+                        if (courtIndex >= courtsToUse.length) courtIndex = 0;
+                    }
+                }
+            }
+            
+            matches.push(...newMatches);
+            renderMatches();
+            saveTournamentData();
+            showToast(`${newMatches.length} bracket matches generated!`, 'success');
+        }
+
         // ===== MATCHES =====
         function generateAllMatches() {
             if (teams.length < 2) { showToast('Need at least 2 teams', 'warning'); return; }
@@ -1534,48 +1749,108 @@
             // Use selected courts for dropdown, or all courts if none selected
             const courtsForDropdown = selectedCourts.length > 0 ? selectedCourts : Array.from({length: 12}, (_, i) => i + 1);
             
-            const grid = document.createElement('div');
-            grid.className = 'matches-grid';
-            matches.forEach((match, index) => {
-                const team1 = teams.find(t => t.id === match.team1Id);
-                const team2 = teams.find(t => t.id === match.team2Id);
-                if (!team1 || !team2) return;
-                const p1 = players.find(p => p.id === team1.player1Id);
-                const p2 = players.find(p => p.id === team1.player2Id);
-                const p3 = players.find(p => p.id === team2.player1Id);
-                const p4 = players.find(p => p.id === team2.player2Id);
-                const card = document.createElement('div');
-                card.className = `match-card ${match.status}`;
-                const statusText = match.status === 'scheduled' ? 'Scheduled' : 'Completed';
-                
-                // Generate court options based on selected courts
-                const courtOptions = courtsForDropdown.map(court => 
-                    `<option value="${court}" ${match.courtNumber === court ? 'selected' : ''}>Court ${court}</option>`
-                ).join('');
-                
-                let courtHTML = match.status !== 'completed' ? 
-                    `<div class="court-assignment"><label>Court:</label><select onchange="assignMatchToCourt('${match.id}', this.value)"><option value="">Not Assigned</option>${courtOptions}</select></div>` :
-                    (match.courtNumber ? `<div style="text-align: center; margin: 10px 0;"><span class="court-badge">Court ${match.courtNumber}</span></div>` : '');
-                let scoresHTML = '';
-                if (match.status === 'completed' && match.games.length > 0) {
-                    scoresHTML = '<div style="margin: 10px 0; font-size: 0.9em;">';
-                    match.games.forEach((game, idx) => { scoresHTML += `<div>Game ${idx + 1}: <strong>${game.team1Score}-${game.team2Score}</strong></div>`; });
-                    scoresHTML += '</div>';
-                }
-                card.innerHTML = `
-                    <button class="delete-match-btn" onclick="deleteMatch('${match.id}')">✕</button>
-                    <div class="match-header"><span class="match-number">Match #${index + 1}</span><span class="match-status ${match.status}">${statusText}</span></div>
-                    ${courtHTML}
-                    <div class="team-row"><div class="team-label">${team1.name}</div><div>${p1.name} & ${p2.name}</div></div>
-                    <div class="vs-divider">VS</div>
-                    <div class="team-row"><div class="team-label">${team2.name}</div><div>${p3.name} & ${p4.name}</div></div>
-                    ${scoresHTML}
-                    ${match.status !== 'completed' ? `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="openScoreModal('${match.id}')">Enter Scores</button>` : ''}
-                `;
-                grid.appendChild(card);
-            });
+            // Group matches by bracket if using multiple bracket format
+            const isMultipleBrackets = tournament.format === 'multiple';
+            let matchesByBracket = {};
+            
+            if (isMultipleBrackets) {
+                // Group matches by bracketId
+                matches.forEach(match => {
+                    const bracketId = match.bracketId || 0;
+                    if (!matchesByBracket[bracketId]) {
+                        matchesByBracket[bracketId] = [];
+                    }
+                    matchesByBracket[bracketId].push(match);
+                });
+            } else {
+                // All matches in one group for single bracket
+                matchesByBracket[0] = matches;
+            }
+            
             container.innerHTML = '';
-            container.appendChild(grid);
+            let globalMatchIndex = 0;
+            
+            // Sort bracket IDs to display in order
+            const bracketIds = Object.keys(matchesByBracket).sort((a, b) => parseInt(a) - parseInt(b));
+            
+            bracketIds.forEach((bracketId, bracketIdx) => {
+                const bracketMatches = matchesByBracket[bracketId];
+                
+                // Add bracket header if multiple brackets
+                if (isMultipleBrackets) {
+                    const bracketHeader = document.createElement('div');
+                    bracketHeader.style.cssText = 'margin: 20px 0 15px 0; padding: 12px 20px; background: linear-gradient(135deg, #1a5632 0%, #0d3d1f 100%); border-radius: 8px; border-left: 5px solid #d4af37;';
+                    const completedCount = bracketMatches.filter(m => m.status === 'completed').length;
+                    bracketHeader.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div style="font-size: 1.3em; font-weight: bold; color: #d4af37;">
+                                ${bracketId > 0 ? `🏆 Bracket ${bracketId}` : '📋 Unassigned Matches'}
+                            </div>
+                            <div style="font-size: 0.9em; color: #d4af37; opacity: 0.9;">
+                                ${completedCount}/${bracketMatches.length} matches completed
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(bracketHeader);
+                }
+                
+                // Create grid for this bracket's matches
+                const grid = document.createElement('div');
+                grid.className = 'matches-grid';
+                
+                bracketMatches.forEach((match) => {
+                    globalMatchIndex++;
+                    const team1 = teams.find(t => t.id === match.team1Id);
+                    const team2 = teams.find(t => t.id === match.team2Id);
+                    if (!team1 || !team2) return;
+                    const p1 = players.find(p => p.id === team1.player1Id);
+                    const p2 = players.find(p => p.id === team1.player2Id);
+                    const p3 = players.find(p => p.id === team2.player1Id);
+                    const p4 = players.find(p => p.id === team2.player2Id);
+                    const card = document.createElement('div');
+                    card.className = `match-card ${match.status}`;
+                    const statusText = match.status === 'scheduled' ? 'Scheduled' : 'Completed';
+                    
+                    // Generate court options based on selected courts
+                    const courtOptions = courtsForDropdown.map(court => 
+                        `<option value="${court}" ${match.courtNumber === court ? 'selected' : ''}>Court ${court}</option>`
+                    ).join('');
+                    
+                    // Add bracket badge for multiple bracket format
+                    const bracketBadge = isMultipleBrackets && bracketId > 0 ? 
+                        `<span style="display: inline-block; padding: 2px 8px; background: #1a5632; color: #d4af37; border-radius: 3px; font-size: 0.8em; margin-left: 8px;">Bracket ${bracketId}</span>` : '';
+                    
+                    let courtHTML = match.status !== 'completed' ? 
+                        `<div class="court-assignment"><label>Court:</label><select onchange="assignMatchToCourt('${match.id}', this.value)"><option value="">Not Assigned</option>${courtOptions}</select></div>` :
+                        (match.courtNumber ? `<div style="text-align: center; margin: 10px 0;"><span class="court-badge">Court ${match.courtNumber}</span></div>` : '');
+                    let scoresHTML = '';
+                    if (match.status === 'completed' && match.games.length > 0) {
+                        scoresHTML = '<div style="margin: 10px 0; font-size: 0.9em;">';
+                        match.games.forEach((game, idx) => { scoresHTML += `<div>Game ${idx + 1}: <strong>${game.team1Score}-${game.team2Score}</strong></div>`; });
+                        scoresHTML += '</div>';
+                    }
+                    card.innerHTML = `
+                        <button class="delete-match-btn" onclick="deleteMatch('${match.id}')">✕</button>
+                        <div class="match-header"><span class="match-number">Match #${globalMatchIndex}${bracketBadge}</span><span class="match-status ${match.status}">${statusText}</span></div>
+                        ${courtHTML}
+                        <div class="team-row"><div class="team-label">${team1.name}</div><div>${p1.name} & ${p2.name}</div></div>
+                        <div class="vs-divider">VS</div>
+                        <div class="team-row"><div class="team-label">${team2.name}</div><div>${p3.name} & ${p4.name}</div></div>
+                        ${scoresHTML}
+                        ${match.status !== 'completed' ? `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="openScoreModal('${match.id}')">Enter Scores</button>` : ''}
+                    `;
+                    grid.appendChild(card);
+                });
+                
+                container.appendChild(grid);
+                
+                // Add spacing between brackets
+                if (isMultipleBrackets && bracketIdx < bracketIds.length - 1) {
+                    const spacer = document.createElement('div');
+                    spacer.style.cssText = 'height: 30px;';
+                    container.appendChild(spacer);
+                }
+            });
         }
 
         function deleteMatch(matchId) {
