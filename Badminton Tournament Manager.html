@@ -334,6 +334,7 @@
             border: 1px solid #ddd;
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
 
         body.dark-mode .player-card {
@@ -353,6 +354,34 @@
 
         .player-name {
             flex: 1;
+        }
+
+        .delete-player-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8em;
+            opacity: 0;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .player-card:hover .delete-player-btn {
+            opacity: 1;
+        }
+
+        .delete-player-btn:hover {
+            background: #c82333;
+            transform: scale(1.1);
         }
 
         .player-stars {
@@ -428,6 +457,25 @@
         .player-badge.advanced {
             background: #344C3D;
             color: white;
+        }
+
+        .player-badge.draggable {
+            cursor: move;
+            transition: all 0.2s;
+        }
+
+        .player-badge.draggable:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .player-badge.dragging {
+            opacity: 0.5;
+        }
+
+        .player-badge.drag-over {
+            border: 2px dashed #d4af37;
+            background: rgba(212, 175, 55, 0.2) !important;
         }
 
         /* Match Cards */
@@ -995,6 +1043,22 @@
         </div>
     </div>
 
+    <!-- Load Regular Players Modal -->
+    <div class="modal" id="load-players-modal">
+        <div class="modal-content">
+            <div class="modal-header">Select Players to Load (<span id="selected-player-count">0</span> selected)</div>
+            <div style="margin-bottom: 15px;">
+                <button class="btn btn-sm btn-secondary" onclick="selectAllPlayers()">Select All</button>
+                <button class="btn btn-sm btn-secondary" onclick="deselectAllPlayers()">Deselect All</button>
+            </div>
+            <div id="regular-player-selection-grid" class="players-grid" style="grid-auto-flow: column; grid-template-rows: repeat(8, auto); grid-template-columns: repeat(3, 1fr);"></div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="loadSelectedPlayers()">Load Selected Players</button>
+                <button class="btn btn-secondary" onclick="closeLoadPlayersModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header-container">
             <img src="North Smashers.png" alt="North Smashers Logo" class="logo" onerror="this.onerror=null; this.src='North Smashers.jpg';">
@@ -1095,7 +1159,7 @@
         <!-- Players & Add Guest -->
         <div class="section">
             <div class="section-title">
-                <span>Players</span>
+                <span>Players (<span id="player-count">0</span>)</span>
                 <div style="display: flex; gap: 5px;">
                     <button class="btn btn-sm btn-primary" onclick="loadRegularPlayers()">Load Players</button>
                     <input type="text" id="guest-name" placeholder="Guest name" style="width: 150px; padding: 5px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.9em;">
@@ -1107,7 +1171,7 @@
                     <button class="btn btn-sm btn-success" onclick="addGuestPlayer()">Add</button>
                 </div>
             </div>
-            <div class="players-grid" id="players-grid" style="max-height: 150px; overflow-y: auto;"></div>
+            <div class="players-grid" id="players-grid"></div>
         </div>
 
         <!-- Match Management -->
@@ -1147,6 +1211,7 @@
             <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
                 <button class="btn btn-primary" onclick="generateMatches()">🏸 Generate Matches</button>
                 <button class="btn btn-secondary" onclick="createManualMatch()">➕ Create Manual Match</button>
+                <button class="btn btn-danger" onclick="resetAllMatches()">🗑️ Reset All Matches</button>
             </div>
 
             <div id="matches-container">
@@ -1223,12 +1288,24 @@
         let currentBracket = null; // For filtering leaderboard view
 
         const regularPlayersList = [
-            "Allan Dale Ho", "Allyza Magsino Ramos", "Amir Acosta", "Ian Evangelista",
+            "Alicester Nalos", "Allan Dale Ho", "Allyza Magsino Ramos", "Amir Acosta", "Ian Evangelista",
             "Chesca Chua-Vivas", "Dianne Miles Ho", "Dyan Galang", "Earl Angkiko",
             "Edz Verduz", "Gemma Dulguime", "Gian Verduz", "Isabel Cabucana",
             "Jay-ar Ramos", "Jerald Galang", "Lester Cabucana", "Luzsil Ledesma",
             "Matt Chavez", "Michael Asterpix", "Michael Magpantay", "Mok Vivas",
             "Pjay Lagura", "Vonnet Estaris", "Zoe Chow"
+        ];
+
+        const randomTeamNames = [
+            "Thunder Smashers", "Net Ninjas", "Shuttle Rockets", "Court Kings",
+            "Smash Masters", "Badminton Bandits", "Rally Rebels", "Feather Fighters",
+            "Birdie Blasters", "Drop Shot Dynamos", "Ace Avengers", "Power Smashers",
+            "Net Busters", "Shuttle Warriors", "Court Crushers", "Birdie Bombers",
+            "Racket Raiders", "Volley Vikings", "Smash Squad", "Net Setters",
+            "Shuttle Shifters", "Court Commanders", "Birdie Brigade", "Rally Raptors",
+            "Feather Fury", "Smash Brothers", "Net Force", "Shuttle Stars",
+            "Court Legends", "Birdie Beasts", "Racket Rebels", "Volley Vipers",
+            "Smash Titans", "Net Navigators", "Shuttle Strikers", "Court Cobras"
         ];
 
         const levelNames = ['', 'Beginner', 'Intermediate', 'Advanced'];
@@ -1285,16 +1362,125 @@
         }
 
         // ===== PLAYERS =====
+        let selectedRegularPlayers = [];
+        
         function loadRegularPlayers() {
+            // Open modal for manual selection
+            openLoadPlayersModal();
+        }
+        
+        function openLoadPlayersModal() {
             const savedRatings = JSON.parse(localStorage.getItem('playerRatings') || '{}');
+            selectedRegularPlayers = [];
+            const grid = document.getElementById('regular-player-selection-grid');
+            grid.innerHTML = '';
+            
             regularPlayersList.forEach(name => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                const isAlreadyLoaded = players.find(p => p.name === name);
+                if (isAlreadyLoaded) card.classList.add('selected');
+                card.onclick = () => toggleRegularPlayerSelection(name, card);
+                const level = savedRatings[name] || 2;
+                const stars = Array(3).fill(0).map((_, i) => 
+                    `<span class="star ${i < level ? 'active' : ''}" onclick="event.stopPropagation(); updateRegularPlayerRating('${name}', ${i + 1}, this.parentElement.parentElement)">⭐</span>`
+                ).join('');
+                card.innerHTML = `
+                    <input type="checkbox" ${isAlreadyLoaded ? 'checked' : ''}>
+                    <span class="player-name">${name}</span>
+                    <div class="player-stars" onclick="event.stopPropagation()">${stars}</div>
+                `;
+                if (isAlreadyLoaded) selectedRegularPlayers.push(name);
+                grid.appendChild(card);
+            });
+            
+            updateSelectedPlayerCount();
+            document.getElementById('load-players-modal').classList.add('show');
+        }
+        
+        function updateRegularPlayerRating(playerName, newLevel, cardElement) {
+            const savedRatings = JSON.parse(localStorage.getItem('playerRatings') || '{}');
+            savedRatings[playerName] = newLevel;
+            localStorage.setItem('playerRatings', JSON.stringify(savedRatings));
+            
+            // Update the stars display in the modal
+            const starsContainer = cardElement.querySelector('.player-stars');
+            if (starsContainer) {
+                starsContainer.innerHTML = Array(3).fill(0).map((_, i) => 
+                    `<span class="star ${i < newLevel ? 'active' : ''}" onclick="event.stopPropagation(); updateRegularPlayerRating('${playerName}', ${i + 1}, this.parentElement.parentElement)">⭐</span>`
+                ).join('');
+            }
+            
+            // Also update if player is already loaded
+            const existingPlayer = players.find(p => p.name === playerName);
+            if (existingPlayer) {
+                existingPlayer.level = newLevel;
+                saveTournamentData();
+            }
+        }
+        
+        function closeLoadPlayersModal() {
+            document.getElementById('load-players-modal').classList.remove('show');
+            selectedRegularPlayers = [];
+        }
+        
+        function toggleRegularPlayerSelection(playerName, cardElement) {
+            const idx = selectedRegularPlayers.indexOf(playerName);
+            if (idx !== -1) {
+                selectedRegularPlayers.splice(idx, 1);
+                cardElement.classList.remove('selected');
+                cardElement.querySelector('input').checked = false;
+            } else {
+                selectedRegularPlayers.push(playerName);
+                cardElement.classList.add('selected');
+                cardElement.querySelector('input').checked = true;
+            }
+            updateSelectedPlayerCount();
+        }
+        
+        function selectAllPlayers() {
+            selectedRegularPlayers = [...regularPlayersList];
+            const cards = document.getElementById('regular-player-selection-grid').querySelectorAll('.player-card');
+            cards.forEach(card => {
+                card.classList.add('selected');
+                card.querySelector('input').checked = true;
+            });
+            updateSelectedPlayerCount();
+        }
+        
+        function deselectAllPlayers() {
+            selectedRegularPlayers = [];
+            const cards = document.getElementById('regular-player-selection-grid').querySelectorAll('.player-card');
+            cards.forEach(card => {
+                card.classList.remove('selected');
+                card.querySelector('input').checked = false;
+            });
+            updateSelectedPlayerCount();
+        }
+        
+        function updateSelectedPlayerCount() {
+            document.getElementById('selected-player-count').textContent = selectedRegularPlayers.length;
+        }
+        
+        function loadSelectedPlayers() {
+            if (selectedRegularPlayers.length === 0) {
+                showToast('Please select at least one player', 'warning');
+                return;
+            }
+            
+            const savedRatings = JSON.parse(localStorage.getItem('playerRatings') || '{}');
+            let count = 0;
+            selectedRegularPlayers.forEach(name => {
                 if (!players.find(p => p.name === name)) {
                     players.push({ id: generateId(), name, level: savedRatings[name] || 2 });
+                    count++;
                 }
             });
+            
+            closeLoadPlayersModal();
             renderPlayers();
             saveTournamentData();
-            showToast('Regular players loaded!', 'success');
+            showToast(`${count} players loaded!`, 'success');
         }
 
         function addGuestPlayer() {
@@ -1321,18 +1507,47 @@
             }
         }
 
+        function deletePlayer(playerId) {
+            const player = players.find(p => p.id === playerId);
+            if (!player) return;
+            
+            // Check if player is in any teams
+            const teamsWithPlayer = teams.filter(t => t.player1Id === playerId || t.player2Id === playerId);
+            if (teamsWithPlayer.length > 0) {
+                const teamNames = teamsWithPlayer.map(t => t.name).join(', ');
+                showToast(`Cannot delete ${player.name} - player is in teams: ${teamNames}`, 'error');
+                return;
+            }
+            
+            players = players.filter(p => p.id !== playerId);
+            renderPlayers();
+            saveTournamentData();
+        }
+
         function renderPlayers() {
             const container = document.getElementById('players-grid');
+            
+            // Update player count
+            document.getElementById('player-count').textContent = players.length;
+            
             if (players.length === 0) {
                 container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">No players yet. Load regular players or add guests.</div>';
                 return;
             }
             container.innerHTML = '';
-            players.forEach(player => {
+            
+            // Sort players alphabetically by name
+            const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name));
+            
+            sortedPlayers.forEach(player => {
                 const card = document.createElement('div');
                 card.className = 'player-card';
                 const stars = Array(3).fill(0).map((_, i) => `<span class="star ${i < player.level ? 'active' : ''}" onclick="event.stopPropagation(); updatePlayerLevel('${player.id}', ${i + 1})">⭐</span>`).join('');
-                card.innerHTML = `<span class="player-name">${player.name}</span><div class="player-stars" onclick="event.stopPropagation()">${stars}</div>`;
+                card.innerHTML = `
+                    <span class="player-name">${player.name}</span>
+                    <div class="player-stars" onclick="event.stopPropagation()">${stars}</div>
+                    <button class="delete-player-btn" onclick="event.stopPropagation(); deletePlayer('${player.id}')">✕</button>
+                `;
                 container.appendChild(card);
             });
         }
@@ -1392,16 +1607,53 @@
 
         function autoGenerateTeams() {
             if (players.length < 2) { showToast('Need at least 2 players', 'warning'); return; }
-            const shuffled = [...players].sort(() => Math.random() - 0.5);
+            
+            // Sort players by skill level (low to high), then shuffle within each level
+            const sortedPlayers = [...players].sort((a, b) => a.level - b.level);
+            
+            // Create balanced pairs: pair lowest skill with highest skill
+            const lowSkill = sortedPlayers.slice(0, Math.ceil(sortedPlayers.length / 2));
+            const highSkill = sortedPlayers.slice(Math.ceil(sortedPlayers.length / 2)).reverse();
+            
+            // Shuffle team names for random selection
+            const availableNames = [...randomTeamNames].sort(() => Math.random() - 0.5);
+            let nameIndex = 0;
             let count = 0;
-            for (let i = 0; i < shuffled.length - 1; i += 2) {
-                teams.push({ id: generateId(), name: `Team ${teams.length + 1}`, player1Id: shuffled[i].id, player2Id: shuffled[i + 1].id, bracketId: null });
+            
+            // Pair players from opposite ends of skill spectrum
+            for (let i = 0; i < Math.min(lowSkill.length, highSkill.length); i++) {
+                // Get a unique team name
+                let teamName;
+                if (nameIndex < availableNames.length) {
+                    teamName = availableNames[nameIndex];
+                    // Check if name already exists, add number if needed
+                    let suffix = 1;
+                    let finalName = teamName;
+                    while (teams.find(t => t.name === finalName)) {
+                        suffix++;
+                        finalName = `${teamName} ${suffix}`;
+                    }
+                    teamName = finalName;
+                } else {
+                    // If we run out of names, use numbered fallback
+                    teamName = `Team ${teams.length + 1}`;
+                }
+                
+                teams.push({ 
+                    id: generateId(), 
+                    name: teamName, 
+                    player1Id: lowSkill[i].id, 
+                    player2Id: highSkill[i].id, 
+                    bracketId: null 
+                });
+                nameIndex++;
                 count++;
             }
+            
             renderTeams();
             saveTournamentData();
             document.getElementById('display-teams').textContent = teams.length;
-            showToast(`${count} teams auto-generated!`, 'success');
+            showToast(`${count} balanced teams auto-generated!`, 'success');
         }
 
         function deleteTeam(teamId) {
@@ -1495,8 +1747,18 @@
                 card.innerHTML = `
                     <div class="team-name">${team.name}</div>
                     <div class="team-players">
-                        <span class="player-badge ${levelClasses[p1.level]}">${p1.name}</span>
-                        <span class="player-badge ${levelClasses[p2.level]}">${p2.name}</span>
+                        <span class="player-badge ${levelClasses[p1.level]} draggable" draggable="true" 
+                            ondragstart="handleDragStart(event, '${p1.id}', '${team.id}')"
+                            ondragover="handleDragOver(event)"
+                            ondragleave="handleDragLeave(event)"
+                            ondrop="handleDrop(event, '${p1.id}', '${team.id}')"
+                            ondragend="handleDragEnd(event)">${p1.name}</span>
+                        <span class="player-badge ${levelClasses[p2.level]} draggable" draggable="true"
+                            ondragstart="handleDragStart(event, '${p2.id}', '${team.id}')"
+                            ondragover="handleDragOver(event)"
+                            ondragleave="handleDragLeave(event)"
+                            ondrop="handleDrop(event, '${p2.id}', '${team.id}')"
+                            ondragend="handleDragEnd(event)">${p2.name}</span>
                     </div>
                     <div style="display: flex; gap: 5px;">
                         <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="openEditTeamModal('${team.id}')">Edit</button>
@@ -1536,6 +1798,11 @@
                 return;
             }
             
+            // Calculate court assignments for brackets
+            const courtsToUse = selectedCourts.length > 0 ? selectedCourts : [];
+            const courtsPerBracket = courtsToUse.length > 0 ? Math.floor(courtsToUse.length / numBrackets) : 0;
+            const extraCourts = courtsToUse.length > 0 ? courtsToUse.length % numBrackets : 0;
+            
             // Create bracket containers
             for (let i = 1; i <= numBrackets; i++) {
                 const bracketDiv = document.createElement('div');
@@ -1546,9 +1813,21 @@
                     ? teamsInBracket.map(t => `<span style="display: inline-block; padding: 3px 8px; margin: 2px; background: white; border-radius: 3px; font-size: 0.85em;">${t.name}</span>`).join('')
                     : '<span style="color: #999; font-style: italic;">No teams assigned</span>';
                 
+                // Calculate court range for this bracket
+                let courtInfo = '';
+                if (courtsToUse.length > 0) {
+                    const startIdx = (i - 1) * courtsPerBracket + Math.min(i - 1, extraCourts);
+                    const endIdx = startIdx + courtsPerBracket + (i <= extraCourts ? 1 : 0);
+                    const bracketCourts = courtsToUse.slice(startIdx, endIdx);
+                    if (bracketCourts.length > 0) {
+                        courtInfo = `<div style="font-size: 0.8em; color: #666; margin-top: 5px;">📍 Courts: ${bracketCourts.join(', ')}</div>`;
+                    }
+                }
+                
                 bracketDiv.innerHTML = `
                     <div style="font-weight: bold; color: #1a5632; margin-bottom: 8px;">Bracket ${i} (${teamsInBracket.length} teams):</div>
-                    <div style="min-height: 30px;">${teamsList}</div>
+                    ${courtInfo}
+                    <div style="min-height: 30px; margin-top: 8px;">${teamsList}</div>
                 `;
                 container.appendChild(bracketDiv);
             }
@@ -1656,39 +1935,83 @@
             
             const courtsToUse = selectedCourts.length > 0 ? selectedCourts : Array.from({length: 12}, (_, i) => i + 1);
             const newMatches = [];
-            let courtIndex = 0;
-            
-            // Generate matches within each bracket
             const numBrackets = tournament.numberOfBrackets;
+            
+            // Divide courts among brackets
+            const courtsPerBracket = Math.floor(courtsToUse.length / numBrackets);
+            const extraCourts = courtsToUse.length % numBrackets;
+            
+            // Generate matches within each bracket using round-robin scheduling
             for (let bracketId = 1; bracketId <= numBrackets; bracketId++) {
                 const bracketTeams = teams.filter(t => t.bracketId === bracketId);
                 
                 if (bracketTeams.length < 2) continue;
                 
-                // Round-robin within bracket
+                // Calculate court range for this bracket
+                const startIdx = (bracketId - 1) * courtsPerBracket + Math.min(bracketId - 1, extraCourts);
+                const endIdx = startIdx + courtsPerBracket + (bracketId <= extraCourts ? 1 : 0);
+                const bracketCourts = courtsToUse.slice(startIdx, endIdx);
+                
+                // Create all possible matches
+                const allMatches = [];
                 for (let i = 0; i < bracketTeams.length - 1; i++) {
                     for (let j = i + 1; j < bracketTeams.length; j++) {
-                        newMatches.push({ 
-                            id: generateId(), 
-                            team1Id: bracketTeams[i].id, 
-                            team2Id: bracketTeams[j].id, 
-                            status: 'scheduled', 
-                            games: [], 
-                            winnerId: null, 
-                            completedAt: null, 
-                            courtNumber: courtsToUse[courtIndex],
+                        allMatches.push({ 
+                            team1: bracketTeams[i], 
+                            team2: bracketTeams[j],
+                            assigned: false
+                        });
+                    }
+                }
+                
+                // Organize into rounds where no team plays twice
+                let courtIndex = 0;
+                while (allMatches.some(m => !m.assigned)) {
+                    const roundMatches = [];
+                    const teamsInRound = new Set();
+                    
+                    // Fill this round with non-conflicting matches
+                    for (const match of allMatches) {
+                        if (match.assigned) continue;
+                        
+                        const t1Id = match.team1.id;
+                        const t2Id = match.team2.id;
+                        
+                        // Check if both teams are available (not already playing in this round)
+                        if (!teamsInRound.has(t1Id) && !teamsInRound.has(t2Id)) {
+                            roundMatches.push(match);
+                            teamsInRound.add(t1Id);
+                            teamsInRound.add(t2Id);
+                            match.assigned = true;
+                            
+                            // Stop if we've filled all courts for this round
+                            if (roundMatches.length >= bracketCourts.length) break;
+                        }
+                    }
+                    
+                    // Assign courts to this round's matches
+                    roundMatches.forEach((match, idx) => {
+                        const court = bracketCourts[courtIndex % bracketCourts.length];
+                        newMatches.push({
+                            id: generateId(),
+                            team1Id: match.team1.id,
+                            team2Id: match.team2.id,
+                            status: 'scheduled',
+                            games: [],
+                            winnerId: null,
+                            completedAt: null,
+                            courtNumber: court,
                             bracketId: bracketId
                         });
                         courtIndex++;
-                        if (courtIndex >= courtsToUse.length) courtIndex = 0;
-                    }
+                    });
                 }
             }
             
             matches.push(...newMatches);
             renderMatches();
             saveTournamentData();
-            showToast(`${newMatches.length} bracket matches generated!`, 'success');
+            showToast(`${newMatches.length} bracket matches generated with proper round scheduling!`, 'success');
         }
 
         // ===== MATCHES =====
@@ -1794,11 +2117,41 @@
                     container.appendChild(bracketHeader);
                 }
                 
-                // Create grid for this bracket's matches
-                const grid = document.createElement('div');
-                grid.className = 'matches-grid';
+                // Organize matches into rounds based on number of courts per bracket
+                const courtsInBracket = bracketId > 0 && tournament.format === 'multiple' 
+                    ? (() => {
+                        const courtsToUse = selectedCourts.length > 0 ? selectedCourts : [];
+                        const courtsPerBracket = Math.floor(courtsToUse.length / tournament.numberOfBrackets);
+                        const extraCourts = courtsToUse.length % tournament.numberOfBrackets;
+                        return courtsPerBracket + (bracketId <= extraCourts ? 1 : 0);
+                    })()
+                    : selectedCourts.length || 12;
                 
-                bracketMatches.forEach((match) => {
+                // Group matches into rounds
+                const rounds = [];
+                for (let i = 0; i < bracketMatches.length; i += courtsInBracket) {
+                    rounds.push(bracketMatches.slice(i, i + courtsInBracket));
+                }
+                
+                // Render each round
+                rounds.forEach((roundMatches, roundIndex) => {
+                    // Add round header
+                    const roundHeader = document.createElement('div');
+                    roundHeader.style.cssText = 'margin: 15px 0 10px 0; padding: 8px 15px; background: #e9ecef; border-left: 4px solid #1a5632; border-radius: 4px;';
+                    const completedInRound = roundMatches.filter(m => m.status === 'completed').length;
+                    roundHeader.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="font-weight: bold; color: #1a5632;">🏸 Round ${roundIndex + 1}</div>
+                            <div style="font-size: 0.85em; color: #666;">${completedInRound}/${roundMatches.length} completed • ${roundMatches.length} court${roundMatches.length > 1 ? 's' : ''} playing simultaneously</div>
+                        </div>
+                    `;
+                    container.appendChild(roundHeader);
+                    
+                    // Create grid for this round's matches
+                    const grid = document.createElement('div');
+                    grid.className = 'matches-grid';
+                    
+                    roundMatches.forEach((match) => {
                     globalMatchIndex++;
                     const team1 = teams.find(t => t.id === match.team1Id);
                     const team2 = teams.find(t => t.id === match.team2Id);
@@ -1833,16 +2186,49 @@
                         <button class="delete-match-btn" onclick="deleteMatch('${match.id}')">✕</button>
                         <div class="match-header"><span class="match-number">Match #${globalMatchIndex}${bracketBadge}</span><span class="match-status ${match.status}">${statusText}</span></div>
                         ${courtHTML}
-                        <div class="team-row"><div class="team-label">${team1.name}</div><div>${p1.name} & ${p2.name}</div></div>
+                        <div class="team-row">
+                            <div class="team-label">${team1.name}</div>
+                            <div>
+                                <span class="player-badge ${levelClasses[p1.level]} draggable" draggable="true"
+                                    ondragstart="handleDragStart(event, '${p1.id}', '${team1.id}')"
+                                    ondragover="handleDragOver(event)"
+                                    ondragleave="handleDragLeave(event)"
+                                    ondrop="handleDrop(event, '${p1.id}', '${team1.id}')"
+                                    ondragend="handleDragEnd(event)" style="margin-right: 5px;">${p1.name}</span>
+                                <span class="player-badge ${levelClasses[p2.level]} draggable" draggable="true"
+                                    ondragstart="handleDragStart(event, '${p2.id}', '${team1.id}')"
+                                    ondragover="handleDragOver(event)"
+                                    ondragleave="handleDragLeave(event)"
+                                    ondrop="handleDrop(event, '${p2.id}', '${team1.id}')"
+                                    ondragend="handleDragEnd(event)">${p2.name}</span>
+                            </div>
+                        </div>
                         <div class="vs-divider">VS</div>
-                        <div class="team-row"><div class="team-label">${team2.name}</div><div>${p3.name} & ${p4.name}</div></div>
+                        <div class="team-row">
+                            <div class="team-label">${team2.name}</div>
+                            <div>
+                                <span class="player-badge ${levelClasses[p3.level]} draggable" draggable="true"
+                                    ondragstart="handleDragStart(event, '${p3.id}', '${team2.id}')"
+                                    ondragover="handleDragOver(event)"
+                                    ondragleave="handleDragLeave(event)"
+                                    ondrop="handleDrop(event, '${p3.id}', '${team2.id}')"
+                                    ondragend="handleDragEnd(event)" style="margin-right: 5px;">${p3.name}</span>
+                                <span class="player-badge ${levelClasses[p4.level]} draggable" draggable="true"
+                                    ondragstart="handleDragStart(event, '${p4.id}', '${team2.id}')"
+                                    ondragover="handleDragOver(event)"
+                                    ondragleave="handleDragLeave(event)"
+                                    ondrop="handleDrop(event, '${p4.id}', '${team2.id}')"
+                                    ondragend="handleDragEnd(event)">${p4.name}</span>
+                            </div>
+                        </div>
                         ${scoresHTML}
                         ${match.status !== 'completed' ? `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="openScoreModal('${match.id}')">Enter Scores</button>` : ''}
                     `;
-                    grid.appendChild(card);
+                        grid.appendChild(card);
+                    });
+                    
+                    container.appendChild(grid);
                 });
-                
-                container.appendChild(grid);
                 
                 // Add spacing between brackets
                 if (isMultipleBrackets && bracketIdx < bracketIds.length - 1) {
@@ -1851,6 +2237,17 @@
                     container.appendChild(spacer);
                 }
             });
+        }
+
+        function resetAllMatches() {
+            if (!confirm('Reset all matches? This will delete all matches and rankings but keep your teams.')) return;
+            matches = [];
+            rankings = [];
+            renderMatches();
+            updateLeaderboard();
+            updateStats();
+            saveTournamentData();
+            showToast('All matches reset!', 'success');
         }
 
         function deleteMatch(matchId) {
@@ -2095,6 +2492,84 @@
             };
             reader.readAsText(file);
             event.target.value = '';
+        }
+
+        // ===== DRAG AND DROP =====
+        let draggedPlayerId = null;
+        let draggedTeamId = null;
+
+        function handleDragStart(e, playerId, teamId) {
+            draggedPlayerId = playerId;
+            draggedTeamId = teamId;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (e.target.classList.contains('player-badge')) {
+                e.target.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (e.target.classList.contains('player-badge')) {
+                e.target.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e, targetPlayerId, targetTeamId) {
+            e.preventDefault();
+            e.target.classList.remove('drag-over');
+            
+            if (!draggedPlayerId || !draggedTeamId || !targetPlayerId || !targetTeamId) return;
+            if (draggedTeamId === targetTeamId) return; // Can't swap within same team
+            
+            const draggedTeam = teams.find(t => t.id === draggedTeamId);
+            const targetTeam = teams.find(t => t.id === targetTeamId);
+            
+            if (!draggedTeam || !targetTeam) return;
+            
+            // Find which player in each team
+            const draggedIsPlayer1 = draggedTeam.player1Id === draggedPlayerId;
+            const targetIsPlayer1 = targetTeam.player1Id === targetPlayerId;
+            
+            // Swap the players
+            if (draggedIsPlayer1 && targetIsPlayer1) {
+                const temp = draggedTeam.player1Id;
+                draggedTeam.player1Id = targetTeam.player1Id;
+                targetTeam.player1Id = temp;
+            } else if (draggedIsPlayer1 && !targetIsPlayer1) {
+                const temp = draggedTeam.player1Id;
+                draggedTeam.player1Id = targetTeam.player2Id;
+                targetTeam.player2Id = temp;
+            } else if (!draggedIsPlayer1 && targetIsPlayer1) {
+                const temp = draggedTeam.player2Id;
+                draggedTeam.player2Id = targetTeam.player1Id;
+                targetTeam.player1Id = temp;
+            } else {
+                const temp = draggedTeam.player2Id;
+                draggedTeam.player2Id = targetTeam.player2Id;
+                targetTeam.player2Id = temp;
+            }
+            
+            renderTeams();
+            renderMatches();
+            saveTournamentData();
+            
+            const draggedPlayer = players.find(p => p.id === draggedPlayerId);
+            const targetPlayer = players.find(p => p.id === targetPlayerId);
+            showToast(`${draggedPlayer.name} ⇄ ${targetPlayer.name}`, 'success');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('.player-badge').forEach(badge => {
+                badge.classList.remove('drag-over');
+            });
+            draggedPlayerId = null;
+            draggedTeamId = null;
         }
 
         // ===== UTILS =====
