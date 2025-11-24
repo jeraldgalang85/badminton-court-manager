@@ -1311,6 +1311,7 @@
         const levelNames = ['', 'Beginner', 'Intermediate', 'Advanced'];
         const levelClasses = ['', 'beginner', 'intermediate', 'advanced'];
         let currentMatchForScoring = null;
+        let isEditingScore = false; // Track if we're editing an existing score
         let selectedCourts = [];
 
         // ===== INIT =====
@@ -2222,7 +2223,9 @@
                             </div>
                         </div>
                         ${scoresHTML}
-                        ${match.status !== 'completed' ? `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="openScoreModal('${match.id}')">Enter Scores</button>` : ''}
+                        ${match.status !== 'completed' ? 
+                            `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="openScoreModal('${match.id}')">Enter Scores</button>` : 
+                            `<button class="btn btn-secondary" style="width: 100%; margin-top: 10px;" onclick="editMatchScore('${match.id}')">📝 Edit Score</button>`}
                     `;
                         grid.appendChild(card);
                     });
@@ -2261,11 +2264,44 @@
         }
 
         // ===== SCORES =====
-        function openScoreModal(matchId) {
+        function editMatchScore(matchId) {
+            if (!confirm('Edit the score for this match? Rankings will be recalculated.')) return;
+            
+            isEditingScore = true;
             currentMatchForScoring = matchId;
             const match = matches.find(m => m.id === matchId);
             const team1 = teams.find(t => t.id === match.team1Id);
             const team2 = teams.find(t => t.id === match.team2Id);
+            
+            // Pre-fill with existing scores
+            const existingScore = match.games[0] || { team1Score: 0, team2Score: 0 };
+            const gameInputs = `<div class="score-input-group"><label>Game 1</label><div class="score-inputs"><input type="number" id="t1-game1" min="0" max="30" value="${existingScore.team1Score}"><span>-</span><input type="number" id="t2-game1" min="0" max="30" value="${existingScore.team2Score}"></div></div>`;
+            
+            // Update modal header and button text for edit mode
+            document.querySelector('#score-modal .modal-header').textContent = '📝 Edit Match Scores';
+            document.querySelector('#score-modal .btn-success').textContent = 'Update Score';
+            
+            document.getElementById('score-modal-body').innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;"><strong>${team1.name}</strong> vs <strong>${team2.name}</strong></div>
+                <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9em; color: #856404; border-left: 3px solid #ffc107;">
+                    ⚠️ Editing existing score. Rankings will update automatically.
+                </div>
+                ${gameInputs}
+            `;
+            document.getElementById('score-modal').classList.add('show');
+        }
+
+        function openScoreModal(matchId) {
+            isEditingScore = false;
+            currentMatchForScoring = matchId;
+            const match = matches.find(m => m.id === matchId);
+            const team1 = teams.find(t => t.id === match.team1Id);
+            const team2 = teams.find(t => t.id === match.team2Id);
+            
+            // Reset modal header and button text for new score entry
+            document.querySelector('#score-modal .modal-header').textContent = 'Enter Match Scores';
+            document.querySelector('#score-modal .btn-success').textContent = 'Complete Match';
+            
             // Regular matches: single game, Playoffs: best of 3
             const gameInputs = `<div class="score-input-group"><label>Game 1</label><div class="score-inputs"><input type="number" id="t1-game1" min="0" max="30" placeholder="0"><span>-</span><input type="number" id="t2-game1" min="0" max="30" placeholder="0"></div></div>`;
             document.getElementById('score-modal-body').innerHTML = `
@@ -2278,6 +2314,11 @@
         function closeScoreModal() {
             document.getElementById('score-modal').classList.remove('show');
             currentMatchForScoring = null;
+            isEditingScore = false;
+            
+            // Reset modal to default state
+            document.querySelector('#score-modal .modal-header').textContent = 'Enter Match Scores';
+            document.querySelector('#score-modal .btn-success').textContent = 'Complete Match';
         }
 
         function completeMatch() {
