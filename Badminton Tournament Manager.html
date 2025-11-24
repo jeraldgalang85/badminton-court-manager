@@ -1978,6 +1978,14 @@
             if (teamsWithMatches.length >= 4 && playoffMatches.length === 0) {
                 document.getElementById('playoffs-section').style.display = 'block';
                 document.getElementById('start-playoffs-btn').style.display = 'inline-block';
+                
+                // Update button text based on number of teams
+                const playoffBtn = document.getElementById('start-playoffs-btn');
+                if (teamsWithMatches.length >= 8) {
+                    playoffBtn.textContent = 'Start Playoffs (Top 8)';
+                } else {
+                    playoffBtn.textContent = 'Start Playoffs (Top 4)';
+                }
             }
             
             tbody.innerHTML = '';
@@ -2366,67 +2374,141 @@
         // ===== PLAYOFFS =====
         function startPlayoffs() {
             calculateRankings();
-            const topFour = rankings.filter(r => r.matchesPlayed > 0).slice(0, 4);
+            const teamsWithMatches = rankings.filter(r => r.matchesPlayed > 0);
             
-            if (topFour.length < 4) {
+            if (teamsWithMatches.length < 4) {
                 showToast('Need at least 4 teams with matches completed!', 'warning');
                 return;
             }
 
-            playoffMatches = [
-                { id: 'semi1', label: 'Semi-Final 1', team1Id: topFour[0].teamId, team2Id: topFour[3].teamId, winnerId: null, status: 'scheduled', games: [] },
-                { id: 'semi2', label: 'Semi-Final 2', team1Id: topFour[1].teamId, team2Id: topFour[2].teamId, winnerId: null, status: 'scheduled', games: [] },
-                { id: 'final', label: 'Finals', team1Id: null, team2Id: null, winnerId: null, status: 'pending', games: [] }
-            ];
+            // Determine playoff format based on number of teams
+            if (teamsWithMatches.length >= 8) {
+                // Quarter-finals format (Top 8)
+                const topEight = teamsWithMatches.slice(0, 8);
+                playoffMatches = [
+                    // Quarter-finals
+                    { id: 'qf1', label: 'Quarter-Final 1', team1Id: topEight[0].teamId, team2Id: topEight[7].teamId, winnerId: null, status: 'scheduled', games: [] },
+                    { id: 'qf2', label: 'Quarter-Final 2', team1Id: topEight[1].teamId, team2Id: topEight[6].teamId, winnerId: null, status: 'scheduled', games: [] },
+                    { id: 'qf3', label: 'Quarter-Final 3', team1Id: topEight[2].teamId, team2Id: topEight[5].teamId, winnerId: null, status: 'scheduled', games: [] },
+                    { id: 'qf4', label: 'Quarter-Final 4', team1Id: topEight[3].teamId, team2Id: topEight[4].teamId, winnerId: null, status: 'scheduled', games: [] },
+                    // Semi-finals (TBD)
+                    { id: 'semi1', label: 'Semi-Final 1', team1Id: null, team2Id: null, winnerId: null, status: 'pending', games: [] },
+                    { id: 'semi2', label: 'Semi-Final 2', team1Id: null, team2Id: null, winnerId: null, status: 'pending', games: [] },
+                    // Finals (TBD)
+                    { id: 'final', label: 'Finals', team1Id: null, team2Id: null, winnerId: null, status: 'pending', games: [] }
+                ];
+                playoffStage = 'quarterfinals';
+                showToast('Playoffs started! Top 8 teams seeded in quarter-finals.', 'success');
+            } else {
+                // Semi-finals format (Top 4)
+                const topFour = teamsWithMatches.slice(0, 4);
+                playoffMatches = [
+                    { id: 'semi1', label: 'Semi-Final 1', team1Id: topFour[0].teamId, team2Id: topFour[3].teamId, winnerId: null, status: 'scheduled', games: [] },
+                    { id: 'semi2', label: 'Semi-Final 2', team1Id: topFour[1].teamId, team2Id: topFour[2].teamId, winnerId: null, status: 'scheduled', games: [] },
+                    { id: 'final', label: 'Finals', team1Id: null, team2Id: null, winnerId: null, status: 'pending', games: [] }
+                ];
+                playoffStage = 'semifinals';
+                showToast('Playoffs started! Top 4 teams seeded.', 'success');
+            }
             
-            playoffStage = 'semifinals';
             renderPlayoffs();
             document.getElementById('playoffs-section').style.display = 'block';
             document.getElementById('start-playoffs-btn').style.display = 'none';
-            showToast('Playoffs started! Top 4 teams seeded.', 'success');
         }
 
         function renderPlayoffs() {
             const container = document.getElementById('playoffs-container');
-            container.innerHTML = '<h4 style="color: #1a5632; margin: 15px 0;">Semi-Finals</h4>';
+            container.innerHTML = '';
             
-            playoffMatches.slice(0, 2).forEach(match => {
-                const t1 = teams.find(t => t.id === match.team1Id);
-                const t2 = teams.find(t => t.id === match.team2Id);
-                if (!t1 || !t2) return;
-                
-                const p1 = players.find(p => p.id === t1.player1Id);
-                const p2 = players.find(p => p.id === t1.player2Id);
-                const p3 = players.find(p => p.id === t2.player1Id);
-                const p4 = players.find(p => p.id === t2.player2Id);
-                
-                let scoresHTML = match.winnerId ? `<div style="margin: 10px 0; font-size: 0.9em;">${match.games.map((g, i) => `Game ${i+1}: ${g.team1Score}-${g.team2Score}`).join('<br>')}</div>` : '';
-                const winnerTeam = match.winnerId ? teams.find(t => t.id === match.winnerId) : null;
-                
-                container.innerHTML += `
-                    <div class="match-card ${match.status}" style="margin-bottom: 15px;">
-                        <div class="match-header"><span class="match-number">${match.label}</span><span class="match-status ${match.status}">${match.winnerId ? 'Completed' : 'Scheduled'}</span></div>
-                        <div class="team-row"><div class="team-label">${t1.name}</div><div>${p1.name} & ${p2.name}</div></div>
-                        <div class="vs-divider">VS</div>
-                        <div class="team-row"><div class="team-label">${t2.name}</div><div>${p3.name} & ${p4.name}</div></div>
-                        ${scoresHTML}
-                        ${winnerTeam ? `<div style="text-align: center; margin: 10px 0; font-weight: bold; color: #28a745;">Winner: ${winnerTeam.name}</div>` : 
-                        `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="enterPlayoffScore('${match.id}')">Enter Scores</button>`}
-                    </div>
-                `;
-            });
+            // Render Quarter-Finals if they exist
+            const quarterFinals = playoffMatches.filter(m => m.id.startsWith('qf'));
+            if (quarterFinals.length > 0) {
+                container.innerHTML += '<h4 style="color: #1a5632; margin: 15px 0;">⚔️ Quarter-Finals</h4>';
+                quarterFinals.forEach(match => {
+                    const t1 = teams.find(t => t.id === match.team1Id);
+                    const t2 = teams.find(t => t.id === match.team2Id);
+                    if (!t1 || !t2) return;
+                    
+                    const p1 = players.find(p => p.id === t1.player1Id);
+                    const p2 = players.find(p => p.id === t1.player2Id);
+                    const p3 = players.find(p => p.id === t2.player1Id);
+                    const p4 = players.find(p => p.id === t2.player2Id);
+                    
+                    let scoresHTML = match.winnerId ? `<div style="margin: 10px 0; font-size: 0.9em;">${match.games.map((g, i) => `Game ${i+1}: ${g.team1Score}-${g.team2Score}`).join('<br>')}</div>` : '';
+                    const winnerTeam = match.winnerId ? teams.find(t => t.id === match.winnerId) : null;
+                    
+                    container.innerHTML += `
+                        <div class="match-card ${match.status}" style="margin-bottom: 15px;">
+                            <div class="match-header"><span class="match-number">${match.label}</span><span class="match-status ${match.status}">${match.winnerId ? 'Completed' : 'Scheduled'}</span></div>
+                            <div class="team-row"><div class="team-label">${t1.name}</div><div>${p1.name} & ${p2.name}</div></div>
+                            <div class="vs-divider">VS</div>
+                            <div class="team-row"><div class="team-label">${t2.name}</div><div>${p3.name} & ${p4.name}</div></div>
+                            ${scoresHTML}
+                            ${winnerTeam ? `<div style="text-align: center; margin: 10px 0; font-weight: bold; color: #28a745;">Winner: ${winnerTeam.name}</div>` : 
+                            `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="enterPlayoffScore('${match.id}')">Enter Scores</button>`}
+                        </div>
+                    `;
+                });
+            }
+            
+            // Render Semi-Finals
+            const semiFinals = playoffMatches.filter(m => m.id.startsWith('semi'));
+            if (semiFinals.length > 0 && (semiFinals[0].team1Id || quarterFinals.length === 0)) {
+                container.innerHTML += '<h4 style="color: #1a5632; margin: 15px 0;">🎯 Semi-Finals</h4>';
+                semiFinals.forEach(match => {
+                    if (!match.team1Id || !match.team2Id) return; // Skip if teams not yet determined
+                    
+                    const t1 = teams.find(t => t.id === match.team1Id);
+                    const t2 = teams.find(t => t.id === match.team2Id);
+                    if (!t1 || !t2) return;
+                    
+                    const p1 = players.find(p => p.id === t1.player1Id);
+                    const p2 = players.find(p => p.id === t1.player2Id);
+                    const p3 = players.find(p => p.id === t2.player1Id);
+                    const p4 = players.find(p => p.id === t2.player2Id);
+                    
+                    let scoresHTML = match.winnerId ? `<div style="margin: 10px 0; font-size: 0.9em;">${match.games.map((g, i) => `Game ${i+1}: ${g.team1Score}-${g.team2Score}`).join('<br>')}</div>` : '';
+                    const winnerTeam = match.winnerId ? teams.find(t => t.id === match.winnerId) : null;
+                    
+                    container.innerHTML += `
+                        <div class="match-card ${match.status}" style="margin-bottom: 15px;">
+                            <div class="match-header"><span class="match-number">${match.label}</span><span class="match-status ${match.status}">${match.winnerId ? 'Completed' : 'Scheduled'}</span></div>
+                            <div class="team-row"><div class="team-label">${t1.name}</div><div>${p1.name} & ${p2.name}</div></div>
+                            <div class="vs-divider">VS</div>
+                            <div class="team-row"><div class="team-label">${t2.name}</div><div>${p3.name} & ${p4.name}</div></div>
+                            ${scoresHTML}
+                            ${winnerTeam ? `<div style="text-align: center; margin: 10px 0; font-weight: bold; color: #28a745;">Winner: ${winnerTeam.name}</div>` : 
+                            `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="enterPlayoffScore('${match.id}')">Enter Scores</button>`}
+                        </div>
+                    `;
+                });
+            }
 
-            const finals = playoffMatches[2];
-            
+            // Render Finals
+            const finals = playoffMatches.find(m => m.id === 'final');
             if (finals && finals.team1Id && finals.team2Id) {
-                container.innerHTML += '<h4 style="color: #1a5632; margin: 15px 0;">Finals</h4>';
+                container.innerHTML += '<h4 style="color: #1a5632; margin: 15px 0;">🏆 Finals</h4>';
                 const t1 = teams.find(t => t.id === finals.team1Id);
                 const t2 = teams.find(t => t.id === finals.team2Id);
                 const p1 = players.find(p => p.id === t1.player1Id);
                 const p2 = players.find(p => p.id === t1.player2Id);
                 const p3 = players.find(p => p.id === t2.player1Id);
                 const p4 = players.find(p => p.id === t2.player2Id);
-                container.innerHTML += `<div class="match-card" style="border: 3px solid #ffd700;"><div class="match-header"><span>🏆 FINALS</span></div><div class="team-row">${t1.name}: ${p1.name} & ${p2.name}</div><div class="vs-divider">VS</div><div class="team-row">${t2.name}: ${p3.name} & ${p4.name}</div>${finals.winnerId ? '' : `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="enterPlayoffScore('final')">Enter Scores</button>`}</div>`;
+                
+                let scoresHTML = finals.winnerId ? `<div style="margin: 10px 0; font-size: 0.9em;">${finals.games.map((g, i) => `Game ${i+1}: ${g.team1Score}-${g.team2Score}`).join('<br>')}</div>` : '';
+                const winnerTeam = finals.winnerId ? teams.find(t => t.id === finals.winnerId) : null;
+                
+                container.innerHTML += `
+                    <div class="match-card" style="border: 3px solid #ffd700; margin-bottom: 15px;">
+                        <div class="match-header"><span class="match-number">🏆 FINALS</span><span class="match-status ${finals.status}">${finals.winnerId ? 'Completed' : 'Scheduled'}</span></div>
+                        <div class="team-row"><div class="team-label">${t1.name}</div><div>${p1.name} & ${p2.name}</div></div>
+                        <div class="vs-divider">VS</div>
+                        <div class="team-row"><div class="team-label">${t2.name}</div><div>${p3.name} & ${p4.name}</div></div>
+                        ${scoresHTML}
+                        ${winnerTeam ? `<div style="text-align: center; margin: 10px 0; font-weight: bold; color: #ffd700; font-size: 1.2em;">🏆 CHAMPION: ${winnerTeam.name} 🏆</div>` : 
+                        `<button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="enterPlayoffScore('final')">Enter Scores</button>`}
+                    </div>
+                `;
             }
         }
 
@@ -2435,35 +2517,101 @@
             const team1 = teams.find(t => t.id === match.team1Id);
             const team2 = teams.find(t => t.id === match.team2Id);
             currentMatchForScoring = matchId;
-            document.getElementById('score-modal-body').innerHTML = `<div style="text-align: center; margin-bottom: 20px;"><strong>${match.label}: ${team1.name} vs ${team2.name}</strong></div>${[1, 2, 3].map(n => `<div class="score-input-group"><label>Game ${n}</label><div class="score-inputs"><input type="number" id="t1-game${n}" min="0" max="30" placeholder="0"><span>-</span><input type="number" id="t2-game${n}" min="0" max="30" placeholder="0"></div></div>`).join('')}`;
+            
+            // Quarter-finals: Single game knockout, Semi-finals & Finals: Best of 3
+            const isQuarterFinal = matchId.startsWith('qf');
+            const gameInputs = isQuarterFinal 
+                ? `<div class="score-input-group"><label>Game 1 (Knockout)</label><div class="score-inputs"><input type="number" id="t1-game1" min="0" max="30" placeholder="0"><span>-</span><input type="number" id="t2-game1" min="0" max="30" placeholder="0"></div></div>`
+                : [1, 2, 3].map(n => `<div class="score-input-group"><label>Game ${n}</label><div class="score-inputs"><input type="number" id="t1-game${n}" min="0" max="30" placeholder="0"><span>-</span><input type="number" id="t2-game${n}" min="0" max="30" placeholder="0"></div></div>`).join('');
+            
+            document.getElementById('score-modal-body').innerHTML = `<div style="text-align: center; margin-bottom: 20px;"><strong>${match.label}: ${team1.name} vs ${team2.name}</strong></div>${gameInputs}`;
             document.getElementById('score-modal').classList.add('show');
         }
 
         function completePlayoffMatch() {
             const match = playoffMatches.find(m => m.id === currentMatchForScoring);
             if (!match) { completeMatch(); return; }
+            
+            const isQuarterFinal = match.id.startsWith('qf');
             const games = [];
             let t1GamesWon = 0, t2GamesWon = 0;
-            for (let i = 1; i <= 3; i++) {
-                const t1Score = parseInt(document.getElementById(`t1-game${i}`).value) || 0;
-                const t2Score = parseInt(document.getElementById(`t2-game${i}`).value) || 0;
-                if (t1Score === 0 && t2Score === 0) continue;
-                if (t1Score < 21 && t2Score < 21) { showToast(`Game ${i}: Must reach 21`, 'error'); return; }
+            
+            if (isQuarterFinal) {
+                // Quarter-finals: Single game knockout
+                const t1Score = parseInt(document.getElementById('t1-game1').value) || 0;
+                const t2Score = parseInt(document.getElementById('t2-game1').value) || 0;
+                
+                if (t1Score === 0 && t2Score === 0) {
+                    showToast('Please enter scores for the game', 'warning');
+                    return;
+                }
+                if (t1Score < 21 && t2Score < 21) {
+                    showToast('At least one team must reach 21 points', 'error');
+                    return;
+                }
+                if (Math.abs(t1Score - t2Score) < 2 && (t1Score >= 20 || t2Score >= 20)) {
+                    showToast('Must win by 2 points', 'error');
+                    return;
+                }
+                
                 games.push({ team1Score: t1Score, team2Score: t2Score });
-                if (t1Score > t2Score) t1GamesWon++; else t2GamesWon++;
+                match.winnerId = t1Score > t2Score ? match.team1Id : match.team2Id;
+            } else {
+                // Semi-finals & Finals: Best of 3
+                for (let i = 1; i <= 3; i++) {
+                    const t1Score = parseInt(document.getElementById(`t1-game${i}`).value) || 0;
+                    const t2Score = parseInt(document.getElementById(`t2-game${i}`).value) || 0;
+                    if (t1Score === 0 && t2Score === 0) continue;
+                    if (t1Score < 21 && t2Score < 21) { showToast(`Game ${i}: Must reach 21`, 'error'); return; }
+                    games.push({ team1Score: t1Score, team2Score: t2Score });
+                    if (t1Score > t2Score) t1GamesWon++; else t2GamesWon++;
+                }
+                if (games.length === 0) { showToast('Enter scores', 'warning'); return; }
+                match.winnerId = t1GamesWon > t2GamesWon ? match.team1Id : match.team2Id;
             }
-            if (games.length === 0) { showToast('Enter scores', 'warning'); return; }
+            
             match.games = games;
             match.status = 'completed';
-            match.winnerId = t1GamesWon > t2GamesWon ? match.team1Id : match.team2Id;
             
+            // Handle Quarter-Final progression
+            if (match.id.startsWith('qf')) {
+                const qf1 = playoffMatches.find(m => m.id === 'qf1');
+                const qf2 = playoffMatches.find(m => m.id === 'qf2');
+                const qf3 = playoffMatches.find(m => m.id === 'qf3');
+                const qf4 = playoffMatches.find(m => m.id === 'qf4');
+                const semi1 = playoffMatches.find(m => m.id === 'semi1');
+                const semi2 = playoffMatches.find(m => m.id === 'semi2');
+                
+                // QF1 winner vs QF4 winner → Semi1
+                if (qf1.winnerId && qf4.winnerId) {
+                    semi1.team1Id = qf1.winnerId;
+                    semi1.team2Id = qf4.winnerId;
+                    semi1.status = 'scheduled';
+                }
+                
+                // QF2 winner vs QF3 winner → Semi2
+                if (qf2.winnerId && qf3.winnerId) {
+                    semi2.team1Id = qf2.winnerId;
+                    semi2.team2Id = qf3.winnerId;
+                    semi2.status = 'scheduled';
+                }
+                
+                if (semi1.status === 'scheduled' && semi2.status === 'scheduled') {
+                    playoffStage = 'semifinals';
+                }
+            }
+            
+            // Handle Semi-Final progression
             if (match.id === 'semi1' || match.id === 'semi2') {
-                const semi1 = playoffMatches[0];
-                const semi2 = playoffMatches[1];
+                const semi1 = playoffMatches.find(m => m.id === 'semi1');
+                const semi2 = playoffMatches.find(m => m.id === 'semi2');
+                const finals = playoffMatches.find(m => m.id === 'final');
+                
                 if (semi1.winnerId && semi2.winnerId) {
-                    playoffMatches[2].team1Id = semi1.winnerId;
-                    playoffMatches[2].team2Id = semi2.winnerId;
-                    playoffMatches[2].status = 'scheduled';
+                    finals.team1Id = semi1.winnerId;
+                    finals.team2Id = semi2.winnerId;
+                    finals.status = 'scheduled';
+                    playoffStage = 'finals';
                 }
             }
             
